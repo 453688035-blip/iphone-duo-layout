@@ -1,274 +1,208 @@
 ---
 name: iphone-duo-layout
-description: Transforms single-screen iOS UI designs into dual-screen, posture-aware layouts for the iPhone Duo foldable concept (closed outer display, open inner display, tabletop, and 50/50 Split View). Use when a user asks to adapt, redesign, or spec an iPhone/iOS screen for a foldable or dual-screen device, mentions outer vs inner display, hinge/crease avoidance, tabletop or laptop pose, vertical side bars/rails for nav and tab bars, or asks for Figma frames, auto-layout recipes, or SwiftUI/UIKit handoff notes for such layouts.
+description: Transform single-screen iOS/Figma UI into iPhone Duo dual-screen and folded-posture layouts. Use when adapting an app or design to inner/outer displays, portrait/landscape, folded postures, a trailing vertical control rail, fold avoidance, or modal sheets. Provides measured template geometry, a navigation placement matrix, rail anatomy, fold-clearance rules, sheet frames, posture recipes, and an acceptance checklist.
 ---
 
-# iPhone Duo — UI & Layout Transformer
+# iPhone Duo Layout
 
-Convert a standard single-screen smartphone UI into responsive, dual-screen, posture-aware
-layouts for **iPhone Duo**, grounded in Apple's Human Interface Guidelines where HIG applies
-and governed by explicit project conventions where it does not.
+> **Product status:** iPhone Duo is a concept design project. Its screen dimensions, trailing control rail, and fold-related rules are project conventions — not official Apple foldable-iPhone specifications. Apple HIG informs general platform behavior; Duo-specific geometry and rail conventions are explicitly project-defined.
 
-> **Product status.** iPhone Duo is a design-study device. Apple publishes **no** HIG for a
-> foldable iPhone. Rules below are therefore tagged by provenance — never present a `[DUO]`
-> convention to a stakeholder as an Apple requirement.
+## Specification labels
 
-## Provenance legend
+| Label | Meaning |
+|---|---|
+| **Template** | Measured from the supplied design templates. Authoritative for geometry. |
+| **Recommended** | A proposed project rule extending the templates. |
+| **Unverified** | Requires additional design or runtime validation. |
 
-| Tag | Meaning |
-| :--- | :--- |
-| `[HIG]` | Directly supported by Apple's published Human Interface Guidelines. |
-| `[HIG↔]` | Apple precedent exists on another platform (e.g. visionOS vertical tab bars); extended here. |
-| `[DUO]` | iPhone Duo project convention. **Not** Apple guidance; may contradict HIG. Flag when used. |
+**MUST / SHOULD / MAY** describe requirements *within this project*, not Apple platform requirements. Measured template values take precedence over earlier concept dimensions.
 
-## When to use / when not to
+## When to use this skill
 
-**Use** for: foldable/dual-screen adaptation, outer vs inner display design, hinge-safe layout,
-tabletop media-plus-controls splits, Split View 50/50 panes, vertical nav rails, and Figma or
-SwiftUI artifacts for any of the above.
+Invoke when a request mentions any of: iPhone Duo, foldable iPhone, inner/outer display, dual-screen, folded posture, tabletop mode, split view, vertical/trailing rail, fold avoidance, crease clearance, or adapting a single-screen iOS UI to a Duo canvas.
 
-**Do not use** for: standard slab-iPhone redesigns, iPad-only layouts, Android foldables
-(different hinge and posture model), or marketing/brand work.
+## Workflow
 
----
-
-## Step 0 — Gather inputs before designing
-
-Ask the user for anything missing; do not assume silently:
-
-1. **Source design** — Figma file/export, screenshot, or code? Which screen(s)?
-2. **Postures in scope** — Closed, Open, Tabletop, Split View, or all four? (Default: all four.)
-3. **Output format** — Figma-ready spec, annotated wireframes, or SwiftUI/UIKit code?
-4. **Fidelity** — structural wireframe or pixel-faithful visual redesign?
-5. **Localization** — is RTL required? (Flips the control rail to the leading edge.)
-6. **Known constraints** — existing design system, brand colors, component library.
+1. **Identify the layout** the user needs (see §1). If ambiguous, ask which display/orientation/folded state.
+2. **Pull geometry** from [`references/dimensions-tokens.md`](references/dimensions-tokens.md) — screen size, toolbar/rail, reserved regions, fold band, sheet frame.
+3. **Choose the recipe** from [`references/posture-recipes.md`](references/posture-recipes.md) and apply the element-transformation rules.
+4. **Produce output** per the Output Contract below.
+5. **Self-check** against [`references/figma-checklist.md`](references/figma-checklist.md).
 
 ---
 
-## 1. Display states & size classes
+## 1. Display dimensions and layout modes — Template
 
-| State | Device posture | Size class `[HIG]` | Logical canvas `[DUO]` | Primary layout idiom |
-| :--- | :--- | :--- | :--- | :--- |
-| **Outer display** | Closed | Compact Width × Compact Height | 440 × 660 pt | Single column + vertical trailing control rail |
-| **Inner display, portrait** | Fully open | Regular Width × Regular Height | 660 × 880 pt | List-Detail / sidebar split (2–3 columns) |
-| **Inner display, landscape** | Fully open | Regular × Compact | 880 × 660 pt | Multi-column + vertical control rail |
-| **Tabletop** | Half-folded (~90°) | Regular Width, split horizontally | 660 × 440 pt (each half) | Top = display canvas, Bottom = control base |
-| **Split View** | Fully open, 2 apps | Compact Width per pane | 330 × 880 pt per pane | Single column; rail on each pane's outer edge |
+| Display | Orientation | Width | Height |
+|---|---|---:|---:|
+| Inner | Landscape | 951 | 669 |
+| Inner | Portrait | 669 | 951 |
+| Outer | Landscape | 678 | 466 |
+| Outer | Portrait | 466 | 678 |
 
-`[HIG]` Size classes — not device size — must drive every layout decision. Design so the same
-view tree survives a class change without a separate "phone" and "foldable" code path.
+Folded variants **retain the inner-display canvas dimensions** and introduce an *avoidance region* rather than shrinking the screen.
 
-Full numeric tokens (insets, spacing scale, type scale, rail widths, crease band) live in
-`references/dimensions-tokens.md`.
+### Navigation placement matrix — Template
 
----
+| Layout | Top region | Primary destination navigation |
+|---|---|---|
+| Inner portrait | 84 pt toolbar | **Horizontal bottom tab bar** |
+| Inner portrait, folded | 84 pt toolbar | Horizontal bottom tab bar |
+| Inner landscape | 84 pt toolbar | **Right-side vertical rail** |
+| Inner landscape, folded | 84 pt toolbar | Right-side vertical rail |
+| Outer portrait | 84 pt toolbar | **Right-side vertical rail** |
+| Outer landscape | 84 pt toolbar | Right-side vertical rail |
 
-## 2. Posture → layout mapping matrix
+> **Important:** the outer portrait template uses a right-side rail, **not** a conventional bottom tab bar. Do not introduce a full-width bottom tab bar on the outer display without defining a separate layout variant.
 
-| Pose | Auto-layout strategy | Component transformation rule | State to preserve |
-| :--- | :--- | :--- | :--- |
-| **Closed (Outer)** | Vertical stack + trailing side rail | Move nav bar and tab bar contents into the vertical rail; inset canvas by safe areas `[DUO]` | Nav stack depth, scroll offset |
-| **Fully Open (Inner)** | Horizontal split, 2–3 columns | Collapse single-stack list into List-Detail or add a sidebar `[HIG]` | Selected row, detail scroll, expanded sections |
-| **Tabletop** | Top-bottom split (`ArrangementView`) | Top half = media/visual; bottom half = controls, sliders, inputs `[DUO]` | Playback position, transport state, form input |
-| **Split View 50/50** | Two independent panes | Each app's rail moves to its **outer** edge (left app → leading, right app → trailing) `[DUO]` | Per-pane nav state; no cross-pane coupling |
+## 2. Layout regions and safe areas
 
-Per-posture build recipes with wireframes: `references/posture-recipes.md`.
+| Region | Purpose |
+|---|---|
+| Screen | Complete logical display surface |
+| Content region | Readable content and business interactions |
+| Toolbar | Page title, contextual actions, navigation controls |
+| Destination region | Top-level app navigation |
+| Reserved region | Camera, status, or device-related elements |
+| Fold avoidance region | Area excluded from critical interactions |
+| Sheet content region | Independent layout space inside a modal panel |
 
----
+**Core rules**
 
-## 3. Vertical control rail — anatomy and HIG conflicts
+1. Backgrounds MAY extend beneath bars and device-reserved regions.
+2. Text, inputs, and actionable controls MUST remain readable and reachable.
+3. Safe-area reservations and visual margins MUST be managed separately.
+4. Insets MUST NOT be added twice when two reservations describe the same occupied region.
+5. Overlapping reservations SHOULD be treated as a union of excluded areas.
+6. Scrollable content MUST include enough end padding for its last interactive item to clear floating navigation.
 
-The rail replaces the horizontal nav bar + tab bar on the Outer display and in Inner landscape.
+**Clearance vs. decorative underlap:** a floating/translucent bar may let imagery show underneath, but this does **not** authorize placing important text or controls behind it. Distinguish *background underlap* (decorative), *readable content clearance* (text avoids obstruction), and *interactive clearance* (complete touch targets avoid occupied/reserved regions).
 
-**Vertical order, top → bottom** `[DUO]`:
+## 3. Navigation and toolbar rules
 
-1. **Top** — primary navigation (`Back`, `Close`) and the prominent commit action (`Done`, `Send`).
-2. **Middle** — secondary actions and toolbar tools, grouped into logical sections with 16 pt
-   between groups and a hairline separator before the destinations group.
-3. **Bottom** — tab bar navigation destinations, visually anchored to the bottom of the rail.
-4. **Overflow** — when more than 5 destinations or 4 tools are present, collapse the least
-   frequent into a vertical `⋯` menu at the bottom of its group.
+| Function | Correct location |
+|---|---|
+| Back or Close | Page or modal navigation area |
+| Page title | Top toolbar |
+| Edit, Share, Filter, Sort | Contextual toolbar or tools group |
+| Home, Library, Activity, Profile | Destination tab group |
+| Save, Send, Done | Task-specific action area |
+| Additional infrequent tools | Overflow menu |
 
-**Item construction** `[HIG]`: every item pairs an **SF Symbol + text label** (Caption 2).
-Labels let the rail degrade gracefully to icon-only at AX text sizes and expand to a labeled
-overflow menu.
+A destination changes **where the user is**; an action changes **what happens on the current screen**.
 
-**Hard requirements**
+**Recommended behavior:** keep Back/Close separate from destination tabs; keep task actions separate from destination selection; preserve control meaning when moving between horizontal and vertical arrangements; use an explicit overflow menu when tools no longer fit. As a project default, show **no more than five destinations and four contextual tools** without reviewing overflow. Destination order SHOULD remain stable across orientation changes, and a selected destination MUST remain distinguishable without relying on color alone.
 
-- Every target ≥ **44 × 44 pt** `[HIG]`; 60 pt preferred in the rail. Add ~12 pt padding around
-  bezeled elements and ~24 pt around bezel-less visible edges `[HIG]`.
-- The rail floats above content on a Liquid Glass material; extend visually rich content
-  beneath it `[HIG]`.
-- The destinations group **navigates only** — "use a tab bar to support navigation, not to
-  provide actions" `[HIG]`. Put actions in the tools group or a toolbar.
-- Keep the rail visible during navigation; hiding it makes people forget where they are `[HIG]`.
+### Rail anatomy — Template
 
-**⚠️ Three conflicts with HIG — resolve deliberately, then record the choice in the deliverable.**
+The standard rail is **84 pt wide**. Typical measured structure, top to bottom: camera/reserved region (where applicable) → upper tools/navigation group → flexible separation → lower destination group → remaining edge/device clearance.
 
-| Convention | HIG position | Resolution |
-| :--- | :--- | :--- |
-| Rail on the **trailing** edge `[DUO]` | "A sidebar appears on the **leading** side of a view." | Justify with thumb reach + crease clearance. Must mirror to leading in RTL. If stakeholders want HIG purity, use a leading rail and re-run the reach analysis. |
-| **Vertical toolbar** for actions `[DUO]` | "Avoid creating a vertical toolbar." (visionOS) | Prefer keeping *actions* in a compact floating horizontal Liquid Glass bar and only *destinations* vertical. Use a vertical tools group only when the action count ≤ 4. |
-| Vertical rail at all `[HIG↔]` | Vertical tab bars exist only in visionOS: "In visionOS, tab bars are vertical." | Defensible precedent. But the HIG-native inner-display answer is `.tabViewStyle(.sidebarAdaptable)`, which yields a tab bar in Compact width and a sidebar in Regular width with no custom component. Offer this first for the **Open** posture. |
+Typical group width is **48 pt**, positioned **12 pt from the rail's left edge**.
 
-Also note `[HIG]`: "A sidebar requires a large amount of vertical and horizontal space. When
-space is limited … a more compact control such as a tab bar may provide a better navigation
-experience." → **Never** use a full sidebar on the Outer display or in a 330 pt Split View pane.
+> The measured group is **not** mathematically centered in the 84 pt rail: 12 + 48 leaves 24 pt on the other side. Do not silently replace this with an assumed 18/18 split when reproducing the template.
 
----
+### Touch targets — Template
 
-## 4. Crease & reserved-region avoidance
+- Minimum target: **44 × 44 pt**; the visible icon may be smaller than its target.
+- Adjacent targets MUST NOT overlap.
+- A 48 pt-wide group can support a 44 pt target, but its actual target geometry still requires checking. Do not claim a 60 pt-wide target fits inside the measured 48 pt group without redesigning that structure.
 
-- The hinge occupies a **12 pt visual band** along the inner display's center axis — vertical in
-  portrait, horizontal in landscape `[DUO]`.
-- **Must inset ≥ 24 pt from the crease axis** `[DUO]`, echoing HIG's ~24 pt padding rule for
-  bezel-less elements: buttons, primary CTAs, form fields, switches, sliders, alert and modal
-  action rows, menu anchors, and any 44 pt touch target.
-- **May span the crease seamlessly** `[HIG]`: body text, images, video, maps, and any
-  continuously scrollable content. Never truncate or letterbox media at the fold.
-- Modal sheets and popovers anchor to a half, not the full canvas; center them within that half.
-- In **Tabletop** the fold *is* the layout boundary — treat it as a hard container edge, not a
-  region to avoid.
-- Between ~110° and ~170° (partially folded, not tabletop) the crease is optically active but
-  the layout remains a single canvas: apply the insets, do not split.
+> **Platform distinction:** the trailing rail and vertical grouping of contextual tools are iPhone Duo project decisions. They MUST NOT be described as standard iPhone navigation requirements. A conventional adaptive tab bar/sidebar architecture is a valid alternative, but adopting it changes this template's navigation specification.
 
----
+## 4. Tab placement — Template
 
-## 5. Workflow
+**Inner portrait — horizontal tabs:** container **409 × 95** at **x = 130, y = 856**, horizontally centered in the 669 pt screen. Main tab-button group at component-local **x = 25, y = 16**, size **289 × 54**; separate search control at component-local **x = 330, y = 16**, size **54 × 54**. Treat the 95 pt height as the complete reserved zone, not the visible button height. Keep labels concise; don't force every tab to match a measured sublayer width; validate actual non-overlapping hit regions separately. Search may remain separate from the primary destination cluster; don't duplicate Search elsewhere unless the two controls serve clearly different scopes.
 
-Execute in order. Do not skip verification.
+**Landscape and outer-display — vertical tabs** (measured standard examples):
 
-1. **Inventory the source UI.** List every element and classify it: `primary-nav` ·
-   `destination` · `tool/action` · `content` · `cta` · `input` · `modal` · `status`.
-2. **Count and route.** Destinations > 5 or tools > 4 → plan an overflow group now.
-3. **Pick the recipe** for each in-scope posture from `references/posture-recipes.md`.
-4. **Build frames with Fill Container**, never hardcoded pixel sizes. Set both axes to Fill on
-   every content container; only the rail, sidebar, and separators get Fixed/Hug widths `[HIG]`.
-5. **Apply safe-area and layout margins** for Dynamic Island, status bar, home indicator, and
-   the rail edge (values in `references/dimensions-tokens.md`).
-6. **Place the rail** per §3, then record which HIG-conflict resolutions were chosen.
-7. **Apply crease margins** per §4; draw the `Crease Guide` layer and measure clearance.
-8. **Check accessibility, motion, and state continuity** per §6–§8.
-9. **Run the self-check rubric** (§11) and `references/figma-checklist.md` before delivering.
-10. **Report deltas**: what changed from the source design, which `[DUO]` conventions were
-    applied, and which HIG conflicts were accepted.
+| Layout | Tab group position | Group size |
+|---|---|---|
+| Inner landscape | x = 879, y = 375 | 48 × 270 |
+| Outer portrait | x = 394, y = 384 | 48 × 270 |
+| Outer landscape | x = 606, y = 122 | 48 × 270 |
 
----
+These describe current standard examples, not a universal fixed position. **Recommended anchoring:** anchor the destination group to the bottom of the *usable rail region*, then allocate remaining space to tools above it. Inner landscape and outer portrait destination groups end **24 pt above the screen bottom**; outer landscape ends **above the camera placeholder** rather than extending to the physical bottom.
 
-## 6. Accessibility `[HIG]`
+**Tab behavior:** tabs are stable top-level destinations; preserve each tab's navigation stack and scroll state; rotation MUST NOT change the selected destination; never use destination tabs for Save/Delete/Share or other one-time actions. Folded and modal variants may have different lower-group contents — don't assume every lower rail group is the same 270 pt tab component.
 
-- 44 × 44 pt minimum touch target in **every** posture; 60 pt preferred in the vertical rail.
-- **Dynamic Type:** at AX sizes the rail drops text labels and becomes icon-only (never shrinking
-  below 44 pt); content columns reduce 3 → 2 → 1 before any text is truncated.
-- **VoiceOver:** reading order must be rail-top → rail-bottom → content, and must stay logical
-  after a posture change. Group related controls; label every icon-only control.
-- **Gestures:** every swipe-only action needs an onscreen equivalent — critical on the Outer
-  display, where the rail consumes edge-swipe area.
-- **Contrast:** verify in Light and Dark, and against media showing through the Liquid Glass rail.
-- **Reachability:** on the Outer display, place the highest-frequency destination in the bottom
-  third of the rail (natural thumb arc).
+## 5. Fold avoidance — Template
 
-## 7. Motion & transitions `[HIG]`
+| Orientation | Avoidance region | Fold axis |
+|---|---|---|
+| Inner landscape | x = 455.5 → 495.5; full height | x = 475.5 |
+| Inner portrait | y = 455.5 → 495.5; full width | y = 475.5 |
 
-- Posture changes animate as **matched-geometry continuation** of the same content — never a
-  cross-fade between two different screens.
-- The rail **slides** to its new edge; it does not fade out and back in.
-- Column-count changes (1 ↔ 2 ↔ 3) animate as content reflow, with the selected item staying
-  visually anchored.
-- All transitions must be interruptible and honor **Reduce Motion** (collapse to instant layout
-  swaps with no translation).
-- Duration scale: 250–350 ms for posture reflow, 200 ms for the rail slide, ease-out.
+The band is **40 pt total** (20 pt each side of the axis). **Landscape → vertical band; portrait → horizontal band.** Do not substitute earlier concept rules using a 12 pt crease or different orientation mapping.
 
-## 8. State & data continuity
+**Critical-interaction rule — Recommended:** the **complete touch-target bounds** (not the icon center) MUST avoid the band. Vertical band: left target right edge ≤ 455.5, right target left edge ≥ 495.5. Horizontal band: upper target bottom edge ≤ 455.5, lower target top edge ≥ 495.5. An optional **4 pt** comfort gap outside the band (nearest edge 24 pt from axis) is a project refinement, not a measured requirement.
 
-A posture change must never lose user state. Preserve across every transition:
+Backgrounds, maps, and imagery MAY span the fold; avoid essential labels, dense reading columns, or precise manipulation points on it; never split an input, slider, or action row across the band. Folded layouts require **actual content reflow**, not just a visible guide.
 
-- Scroll offset per scrollable region (and per pane in Split View).
-- Text field content, cursor position, and **first responder focus**.
-- Media playback position, transport state, and audio route.
-- Navigation stack depth and the selected row in each List-Detail pane.
-- Draft/compose content, undo history, and any in-progress upload.
+## 6. Sheets — Template
 
-In Tabletop, moving a player from full-screen into the top half is a **reparent**, not a restart.
+Use the posture-specific frame (full table in [`references/dimensions-tokens.md`](references/dimensions-tokens.md) §6):
 
-## 9. Edge cases
+| Layout | Sheet size | Position (x, y) | Edge relationship |
+|---|---|---|---|
+| Inner landscape | 653 × 356 | 149, 305 | Centered horizontally; 8 pt bottom gap |
+| Inner landscape, folded | 468 × 356 | 8, 305 | Left-aligned; 8 pt bottom gap |
+| Inner portrait | 653 × 356 | 8, 587 | 8 pt left/right/bottom gaps |
+| Inner portrait, folded | 653 × 356 | 8, 587 | Same frame; below fold band |
+| Outer landscape | 662 × 458 | 8, 8 | 8 pt left/right/top gaps; **bottom flush** |
+| Outer portrait | 450 × 356 | 8, 314 | 8 pt left/right/bottom gaps |
 
-Full sweep table in `references/figma-checklist.md` §F. The ones most often missed:
+**Exceptions:** outer landscape has **no** bottom gap (8 + 458 = 466); inner landscape centers on the **full screen**; folded landscape is **left-anchored**. The folded landscape sheet overlaps the band by **20.5 pt** (x = 455.5 → 476) — internal button targets MUST be checked individually, and any corrected geometry documented as a **revision**.
 
-- **Keyboard in Tabletop** — the bottom half is the input surface; the keyboard must not cover
-  the control base. Lift controls above it and compress the top canvas.
-- **Camera/preview spanning the crease** — the preview spans, but shutter and capture controls inset.
-- **Both Split View apps are Duo-aware** — each rail goes to its own outer edge, so the two rails
-  end up adjacent at screen center. Verify they don't create a false "single app" reading.
-- **RTL** — mirror the trailing rail to leading and mirror overflow menus; never mirror media
-  transport icons.
-- **Partially folded, not tabletop** — between ~110° and ~170° the crease is optically active but
-  the layout is still one canvas; apply §4 insets without splitting.
+**Internal layout — Template:** toolbar 76, side rail 76, content margin 16, rail group width 48 at leading offset 12, upper group top offset 16, grabber 60 × 4 at top offset 10 (centered). Nominal readable width = **W − 108** (653→545, 468→360, 450→342). The outer landscape sheet uses **84 pt** toolbar/rail despite 76 pt guides — use the actual 84 pt.
+
+**Behavior — Recommended:** use a sheet for a focused task that retains context; go full-screen when the task can't stay readable; treat 356 pt as an example height, not mandatory; long content scrolls inside; provide an explicit Close/Cancel (swipe supplements, never replaces); don't discard unsaved work; limit outside-tap dismissal to safe tasks; define detents per task and recheck a larger detent against the fold; move accessibility focus into the sheet on presentation and restore it to the invoking control on dismissal.
+
+## 7. Menus and popovers — Recommended
+
+Supplied examples include iPad-based references; their canvas and panel sizes MUST NOT be treated as Duo screen specifications. Anchor menus/popovers to the invoking control; reposition when the preferred placement intersects a fold or device reservation; prefer the same fold-safe region as the invoking control; keep dismissal and menu actions reachable; adapt to a sheet when a popover cannot fit without clipping or obstructing essential controls; don't use a popover for a long, multi-step task merely to preserve the original anchor.
+
+## 8. Tabletop and Split View — proposed extensions (Unverified)
+
+These are **proposed extensions**, not completed specifications demonstrated by the current templates.
+
+**Tabletop:** use the actual fold orientation to establish two regions (the portrait template's horizontal band naturally separates upper/lower). Prefer media, preview, or read-only content **above** the fold; prefer controls and input **below**. Don't place an action row or keyboard-dependent input across the band; recalculate content and control space when the keyboard appears.
+
+**50/50 Split View:** measure each pane's available width after divider and safe-area reservations — don't reuse unrelated concept pane dimensions. Give each pane independent navigation and state. Define rail placement explicitly: **"trailing edge" and "outer edge" are not interchangeable.** If the project chooses outer-edge rails, the left pane uses its left boundary and the right pane its right boundary. Avoid critical controls adjacent to the center fold. Don't assume the static templates demonstrate an OS multitasking capability.
+
+## 9. Accessibility, localization, keyboard
+
+**Accessibility — Template/Recommended:** maintain ≥ **44 × 44 pt** targets; support larger text without clipping essential labels; reflow or simplify before shrinking targets; provide accessible names for icon-only controls; expose selected tab state programmatically; keep reading/focus order logical after orientation or posture changes; test contrast over light and dark content beneath translucent materials.
+
+**RTL — Recommended:** mirror app-owned semantic leading/trailing layout; reassess the rail position for RTL rather than merely flipping icon artwork; keep physical camera cutouts and device reservations tied to device geometry; don't mirror media content or nondirectional symbols unnecessarily; revalidate fold clearance after mirroring.
+
+**Keyboard:** keep the focused field and relevant validation message visible; scroll or resize the sheet rather than covering the active input; don't add the keyboard inset to an already keyboard-adjusted container; keep confirmation and dismissal controls reachable; if a fold-safe region can't support the task with the keyboard present, use an expanded or full-screen task layout.
+
+## 10. Responsive layout and state continuity
+
+**Strategy — Recommended:** adapt to available width, height, orientation, and posture; do **not** scale the entire interface proportionally; use fixed dimensions for structural bars; use flexible sizing for content regions; in Figma apply Fill Container only where the parent's Auto Layout supports it; use content-driven text height; treat layout guides as documentation, not a substitute for real containment and constraints.
+
+**Preserve across transitions:** selected destination, navigation depth, selected list item, scroll position per region, form content and validation state, input focus and cursor position (where feasible), media playback position, active sheet task and draft state. **Orientation changes MUST NOT reset the application to its initial screen.**
+
+**Motion — Recommended:** maintain visual continuity when navigation relocates; avoid unnecessary movement across the fold; respect Reduce Motion; don't treat transition timings as validated behavior of the static template.
 
 ---
 
-## 10. Output contract
+## Output contract
 
-**Frame naming:** `iPhone Duo / <Posture> / <Orientation> / <Screen>` —
-e.g. `iPhone Duo / Closed / Portrait / Inbox`, `iPhone Duo / Open / Landscape / Inbox-Detail`.
+When adapting a design, produce:
 
-**Layer structure:** `Device` → `Safe Area` → `Content Canvas` + `Control Rail` + `Crease Guide`.
+1. **Layout spec** for each requested posture (canvas, toolbar, rail/tab, reserved regions, content rect, fold band).
+2. **Element transformation table** (single-screen element → Duo placement, with Template/Recommended/Unverified labels).
+3. **Applied conventions and conflicts** (any accepted deviations, documented as revisions).
+4. **Self-check rubric results** (see [`references/figma-checklist.md`](references/figma-checklist.md)).
+5. **SwiftUI/UIKit handoff mapping** where relevant.
 
-**Every deliverable must include:**
+## Self-check rubric
 
-1. One frame per requested posture, all Fill-Container auto-layout.
-2. A transformation table: source element → classification → placement in each posture.
-3. An explicit list of `[DUO]` conventions applied and HIG conflicts accepted.
-4. Self-check rubric results (pass/fail per line).
-5. Developer handoff notes (below).
+Run the full acceptance checklist in [`references/figma-checklist.md`](references/figma-checklist.md). At minimum confirm: screen dimensions match the template; bezels excluded; 20 pt page margins; 16 pt sheet margins; actual toolbar/rail bounds take precedence over inconsistent guides; insets not double-counted; inner portrait uses the bottom tab arrangement while landscape/outer use the side rail; destinations and actions separate; camera reservations respected; tab order stable; targets ≥ 44 × 44 and non-overlapping; the 40 pt band uses the correct orientation and complete target bounds avoid it; sheet geometry matches the posture and the outer-landscape bottom-flush exception is preserved or explicitly revised; modal background interaction blocked; state preserved across posture changes.
 
-**Developer mapping**
+> **Implementation boundary:** static template measurements establish design geometry. They do **not** verify runtime safe areas, fold sensing, modal behavior, accessibility, keyboard avoidance, or OS support for a hypothetical device.
 
-| Design concept | SwiftUI | UIKit |
-| :--- | :--- | :--- |
-| List-Detail / sidebar | `NavigationSplitView` | `UISplitViewController` |
-| Tab bar ⇄ sidebar | `.tabViewStyle(.sidebarAdaptable)` | `UITabBarController` + sidebar trait |
-| Top/bottom posture split | `ViewThatFits` / custom `ArrangementView` | container VC with two children |
-| Crease insets | custom `Environment` key / `safeAreaInsets` | `additionalSafeAreaInsets` |
-| Posture detection | `horizontalSizeClass` + hinge angle | `UITraitCollection` + display metrics |
-| Content beneath the rail | `.backgroundExtensionEffect()` | `UIScrollView` content insets |
+## Platform references
 
-## 11. Self-check rubric
-
-Confirm every line before declaring done:
-
-- [ ] All requested postures present, each in its own correctly named frame.
-- [ ] Size class (not device size) drives each layout.
-- [ ] No interactive element within 24 pt of the crease axis.
-- [ ] Scrollable content spans the crease without truncation or letterboxing.
-- [ ] Every source nav-bar and tab-bar item is accounted for in the rail, or explicitly dropped with a reason.
-- [ ] The destinations group contains navigation only; actions are separate.
-- [ ] ≤ 5 destinations and ≤ 4 tools visible, or an overflow menu exists.
-- [ ] Every target ≥ 44 × 44 pt; rail items ≥ 60 pt where possible.
-- [ ] Each item has SF Symbol + label; icon-only degradation defined for AX sizes.
-- [ ] Content uses Fill Container; no hardcoded frame dimensions.
-- [ ] The rail floats on Liquid Glass with content extending beneath it.
-- [ ] Dark Mode verified; contrast passes over media.
-- [ ] A state-preservation list is written for every posture transition.
-- [ ] A Reduce Motion variant is specified.
-- [ ] RTL mirroring is specified for the rail.
-- [ ] `[DUO]` conventions and accepted HIG conflicts are listed in the deliverable.
-
----
-
-## References (verified live — Apple HIG)
-
-- Layout — https://developer.apple.com/design/human-interface-guidelines/layout
-- Tab bars — https://developer.apple.com/design/human-interface-guidelines/tab-bars
-- Sidebars — https://developer.apple.com/design/human-interface-guidelines/sidebars
-- Split views — https://developer.apple.com/design/human-interface-guidelines/split-views
-- Toolbars — https://developer.apple.com/design/human-interface-guidelines/toolbars
-- Accessibility — https://developer.apple.com/design/human-interface-guidelines/accessibility
-- Motion — https://developer.apple.com/design/human-interface-guidelines/motion
-- Right to left — https://developer.apple.com/design/human-interface-guidelines/right-to-left
-- Design resources — https://developer.apple.com/design/resources/
-- `TabViewStyle.sidebarAdaptable` — https://developer.apple.com/documentation/swiftui/tabviewstyle/sidebaradaptable
-
-Supporting files: `references/dimensions-tokens.md`, `references/posture-recipes.md`,
-`references/figma-checklist.md`.
-
+Use Apple guidance for general platform behavior while keeping Duo-specific geometry and rail conventions explicitly project-defined: [Layout](https://developer.apple.com/design/human-interface-guidelines/layout) · [Tab bars](https://developer.apple.com/design/human-interface-guidelines/tab-bars) · [Toolbars](https://developer.apple.com/design/human-interface-guidelines/toolbars) · [Sidebars](https://developer.apple.com/design/human-interface-guidelines/sidebars) · [Sheets](https://developer.apple.com/design/human-interface-guidelines/sheets) · [Accessibility](https://developer.apple.com/design/human-interface-guidelines/accessibility) · [Right to left](https://developer.apple.com/design/human-interface-guidelines/right-to-left).
