@@ -1,0 +1,9 @@
+{
+  "name": "iphone-duo-layout",
+  "private": true,
+  "scripts": {
+    "test": "node --test scripts/*.test.mjs",
+    "plan": "node scripts/plan.mjs"
+  },
+  "engines": { "node": ">=18" }
+}

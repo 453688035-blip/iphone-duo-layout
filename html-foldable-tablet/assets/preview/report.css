@@ -1,0 +1,54 @@
+/* Report adapter: the app-shell's content width, not the preview host, drives density. */
+.dp-screen .tb-toc { display: none !important; }
+.dp-screen .layout { max-width: none; padding: 0; }
+.dp-screen section { scroll-margin-top: 0; }
+.dp-screen .tblwrap { overflow: auto; }
+.dp-screen .tblwrap table { min-width: 0 !important; }
+.dp-screen .c-asset,.dp-screen .c-spec,.dp-screen .c-rule { display: none !important; }
+.dp-screen main { overflow-wrap: anywhere; }
+.dp-device[data-pose=duo-inner-landscape] .layout {
+  display: grid; grid-template-columns: var(--dp-nav-width) minmax(0, 1fr);
+}
+.dp-device[data-pose=duo-inner-landscape] {
+  --dp-nav-width: 212px;
+}
+.dp-device[data-pose=duo-inner-landscape] .dp-window {
+  background: linear-gradient(to right, var(--surface,#fff) 0 calc(var(--dp-nav-width) - 1px),
+    var(--line,#e2e7ee) calc(var(--dp-nav-width) - 1px) var(--dp-nav-width),
+    var(--bg,#f4f6f8) var(--dp-nav-width) 100%);
+}
+.dp-device[data-pose=duo-inner-landscape] nav {
+  display: block; position: sticky; top: 0; align-self: start;
+  height: var(--dp-h); padding-bottom: var(--dp-bottom); max-height: none;
+  margin: 0; border: 0; border-right: 1px solid var(--line); border-radius: 0;
+  overflow: auto; overscroll-behavior: contain;
+}
+.dp-device[data-pose=duo-inner-landscape] .duo-topbar { display: none; }
+.dp-device[data-pose=duo-inner-landscape] main { padding: 0 24px 40px; }
+.dp-device:not([data-pose=duo-inner-landscape]) .layout { display: block; }
+.dp-device:not([data-pose=duo-inner-landscape]) nav { display: none; }
+.dp-device:not([data-pose=duo-inner-landscape]) .duo-topbar {
+  display: flex; position: sticky; top: 0; min-height: 50px; align-items: center;
+  background: var(--surface,#fff); padding: 0 16px; border-bottom: 1px solid var(--line,#ddd); z-index: 4;
+}
+.dp-device:not([data-pose=duo-inner-landscape]) main { padding: 0 16px 32px; }
+/* The table is locally scrollable horizontally; its header travels with the
+   table to avoid covering rows beneath the short-window sticky app bar. */
+.dp-screen .tblwrap thead th { position: static; }
+
+/* Source references keep their numbers aligned and remain tappable when wrapped. */
+.dp-screen .src { columns: 1; margin-top: 0; }
+.dp-screen .src > div {
+  display: grid; grid-template-columns: 2ch minmax(0,1fr); align-items: baseline;
+  gap: 10px; padding: 0;
+}
+.dp-screen .src > div > span { margin: 0; }
+.dp-screen .src a { display: block; min-height: 44px; padding-block: 11px; overflow-wrap: anywhere; }
+
+.dp-device[data-edge=phone] .duo-topbar { padding-right: 65px; }
+
+/* The header surface spans the screen. Its title keeps the rail clearance. */
+.dp-device[data-edge=right]:not([data-fold=vertical]) .duo-topbar {
+  margin-right: calc(-1 * var(--dp-rail));
+  padding-right: calc(16px + var(--dp-rail));
+}

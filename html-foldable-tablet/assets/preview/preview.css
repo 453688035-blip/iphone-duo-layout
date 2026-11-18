@@ -1,0 +1,161 @@
+/* The toolbar, caption and fitted artwork have separate layout space. */
+html { scrollbar-gutter: stable; }
+html:has(body.dp-on) { scrollbar-gutter: auto; }
+body.dp-on, body.toc-open { overflow: hidden; }
+body.dp-on { background: #232941; }
+.dp-bar {
+  --dp-bar-text: #edf0f6;
+  position: fixed; z-index: 300; inset: var(--dp-bar-top) auto auto 50%; transform: translateX(-50%);
+  width: max-content;
+  max-inline-size: calc(100% - 24px); display: flex; align-items: center;
+  gap: 3px; padding: 4px; background: #191d26; border: 1px solid #393e4b;
+  border-radius: 16px; color: var(--dp-bar-text); box-shadow: 0 8px 24px #0003;
+}
+body { --dp-bar-top: max(8px, env(safe-area-inset-top)); }
+body:not(.dp-on) { padding-top: calc(var(--dp-bar-top) + var(--dp-bar-h, 54px) + 8px); }
+body:not(.dp-on) .duo-topbar { top: calc(var(--dp-bar-top) + var(--dp-bar-h) + 8px); }
+body:not(.dp-on).toc-open .dp-bar { z-index: 50; }
+
+.dp-bar button {
+  border: 0; border-radius: 11px; min-height: 44px; padding: 4px 9px;
+  background: transparent; color: var(--dp-bar-text); font: 600 13px/1.25 system-ui; cursor: pointer;
+}
+.dp-brand-controls, .dp-poses {
+  display: flex; gap: 3px;
+}
+.dp-brand-controls { flex: none; white-space: nowrap; }
+.dp-poses {
+  min-width: 0; overflow-x: auto; scrollbar-width: none;
+  overscroll-behavior-inline: contain;
+}
+.dp-poses[hidden] { display: none; }
+.dp-poses button {
+  display: grid; place-items: center; flex: 0 0 44px; padding: 0;
+}
+.dp-pose-icon { display: block; width: 32px; height: 32px; }
+.dp-pose-icon-rotated { transform: rotate(90deg); }
+.dp-bar button[aria-pressed=true] { background: #fff; color: #171b23; }
+.dp-bar button[data-dp-pose=web][aria-pressed=true], .dp-bar [data-dp-brand][aria-pressed=true] {
+  background: #343f55; color: var(--dp-bar-text); box-shadow: inset 0 0 0 1px #697a9a;
+}
+.dp-bar button:focus-visible, .dp-menu:focus-visible { outline: 2px solid #7195f4; outline-offset: 2px; }
+.dp-poses button:focus-visible { outline-offset: -2px; }
+.dp-stage {
+  position: fixed; z-index: 290; inset: calc(var(--dp-bar-top) + var(--dp-bar-h, 54px) + 8px) 0 0;
+  display: grid; grid-template-rows: auto minmax(0,1fr);
+  background: radial-gradient(ellipse at 70% 0,#232941,#14171e 75%);
+}
+.dp-stage[hidden], .dp-frame[hidden] { display: none; }
+.dp-caption { padding: 10px 12px 5px; color: #e2e5ed; text-align: center; font: 13px/1.45 system-ui; }
+.dp-caption b { display: block; color: #fff; font-size: 14px; }
+.dp-viewport { min-height: 0; min-width: 0; display: grid; place-items: center; }
+.dp-fit { position: relative; }
+.dp-device { position: absolute; top: 0; left: 0; transform-origin: top left; }
+.dp-frame { position: absolute; z-index: 2; top: 0; left: 0; display: block; transform-origin: center; pointer-events: none; }
+.dp-window { position: absolute; inset: var(--dp-y) auto auto var(--dp-x);
+  width: var(--dp-w); height: var(--dp-h); border-radius: var(--dp-radius); overflow: clip;
+  isolation: isolate; background: var(--bg,#f4f6f8); color: var(--ink,inherit);
+}
+.dp-screen {
+  position: absolute; z-index: 0; inset: var(--dp-top) 0 0; overflow-x: hidden; overflow-y: auto;
+  overscroll-behavior: contain; scrollbar-width: none; overflow-anchor: none;
+  --safe-t: 0px; --safe-r: 0px; --safe-b: 0px; --safe-l: 0px;
+}
+.dp-screen::-webkit-scrollbar { display: none; }
+.dp-screen > .app-shell {
+  box-sizing: border-box; min-height: 100%; border-radius: 0;
+  padding: 0 var(--dp-rail) var(--dp-bottom) 0;
+}
+.dp-screen .duo-topbar { top: 0; }
+.dp-window::after {
+  content: ""; position: absolute; z-index: 1; inset: auto 0 0; height: var(--dp-bottom);
+  background: linear-gradient(to bottom, transparent, var(--bg,#f4f6f8) 80%);
+  pointer-events: none;
+}
+.dp-device[data-pose=duo-inner-landscape] .dp-window::after {
+  left: var(--dp-nav-width, 0px);
+}
+.dp-device[data-fold=horizontal] .dp-window::after { display: none; }
+.dp-controls {
+  position: absolute; z-index: 1; inset: 0 0 0 auto; width: calc(2 * var(--dp-rail-center));
+  pointer-events: none;
+}
+.dp-status, .dp-menu { position: absolute; left: 50%; transform: translateX(-50%); }
+.dp-status { display: none; color: #000; font: 700 16px/19px "SF Pro Rounded", system-ui, sans-serif; }
+.dp-status img { display: block; flex: none; }
+[data-status=duo-vertical] .dp-status-vertical {
+  display: flex; top: var(--dp-status-y); width: 48px; padding-block: 11px 1px;
+  flex-direction: column; gap: 6px; align-items: center;
+}
+.dp-device[data-edge=top] .dp-controls {
+  inset: 0 24px auto auto; width: auto; height: var(--dp-top);
+  display: flex; flex-direction: row-reverse; align-items: center; gap: 12px;
+}
+.dp-device[data-edge=top] :is(.dp-status,.dp-menu) { position: static; transform: none; }
+.dp-device[data-family=huawei] .dp-controls { right: 48px; }
+[data-status=duo-horizontal] .dp-status-horizontal { display: flex; align-items: center; gap: 3px; padding: 1px 1px 1px 2px; }
+.dp-status-horizontal span { width: 46px; text-align: right; }
+.dp-device[data-edge=phone] .dp-controls { inset: 0 0 auto; height: var(--dp-top); width: 100%; }
+[data-status=iphone] .dp-status-iphone {
+  display: grid; grid-template-columns: 1fr 95px 1fr; align-items: center; justify-items: center;
+  inset: 0; padding: 3px 8px 0; transform: none; font: 590 17.67px/22px system-ui;
+}
+.dp-island-space { width: 95px; }
+.dp-phone-levels, .dp-cellular { display: flex; align-items: end; gap: 8px; }
+.dp-cellular { gap: 2.333px; }
+.dp-cellular b { width: 3.333px; border-radius: 4px; height: 6.333px; background: currentColor; }
+.dp-cellular b:nth-child(2) { height: 8.67px; }
+.dp-cellular b:nth-child(3) { height: 11px; }
+.dp-cellular b:nth-child(4) { height: 13.667px; }
+.dp-device[data-edge=phone] .dp-menu { left: auto; right: 12px; transform: none; }
+.dp-device[data-edge=phone] .dp-screen > .app-shell { --dp-rail: 0px; }
+.dp-device[data-edge=phone] .duo-topbar { padding-right: 65px; }
+.dp-fold { display: none; position: absolute; z-index: 1; pointer-events: none; background: #171b2324; }
+.dp-device[data-fold=vertical] .dp-fold { display: block; inset: 0 calc(50% - .5px); }
+.dp-device[data-fold=horizontal] .dp-fold { display: block; inset: calc(50% - .5px) 0; }
+.dp-device[data-fold=vertical] .dp-screen { right: calc(50% + 20px); }
+.dp-device[data-fold=vertical] .dp-screen > .app-shell { padding-right: 0; }
+.dp-device[data-fold=horizontal] .dp-screen { bottom: calc(50% + 20px); }
+.dp-device[data-fold=vertical] .dp-overlays > .duo-sheet { right: calc(50% + 28px); }
+.dp-device[data-fold=horizontal] .dp-overlays > .duo-sheet {
+  bottom: calc(50% + 26px); max-height: calc(50% - var(--dp-top) - 32px);
+}
+@media (max-width: 500px) {
+  .dp-bar { max-inline-size: calc(100% - 16px); }
+  .dp-brand-controls button { padding-inline: 6px; }
+}
+.dp-home { position: absolute; z-index: 2; left: 50%; bottom: 10px; transform: translateX(-50%);
+  width: min(244px,35%); height: 5px; border-radius: 999px; background: #161a2166; pointer-events: none; }
+.dp-menu { top: var(--dp-menu-y); pointer-events: auto;
+  display: grid; place-items: center; width: 44px; height: 44px; padding: 0;
+  background: #fff; color: #171b23; border: 1px solid #e0e4eb; border-radius: 50%;
+  box-shadow: 0 2px 5px #14172220; cursor: pointer; }
+.dp-menu svg { width: 20px; height: 20px; }
+.dp-overlays { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
+.dp-overlays > .duo-scrim, .dp-overlays > .duo-sheet { position: absolute; pointer-events: auto; }
+.duo-scrim[hidden], .duo-sheet[hidden] { display: none; }
+.duo-sheet { min-height: 0; overscroll-behavior: contain; overflow: auto; }
+.sheet-list { min-height: 0; }
+.sheet-head { flex: none; }
+.sheet-close { min-height: 44px; }
+.dp-overlays > .duo-sheet {
+  left: max(16px, var(--dp-sheet-side)); right: max(16px, var(--dp-rail), var(--dp-sheet-side));
+  top: auto; bottom: max(24px,var(--dp-bottom));
+  max-height: min(640px, calc(100% - var(--dp-top) - var(--dp-bottom) - 28px));
+}
+.dp-device[data-orientation=landscape] { --dp-sheet-side: 40px; }
+body:not(.dp-on) .duo-sheet {
+  bottom: max(8px, env(safe-area-inset-bottom));
+  left: max(8px, env(safe-area-inset-left)); right: max(8px, env(safe-area-inset-right));
+}
+@media print { .dp-bar,.dp-stage { display: none !important; } body:not(.dp-on) { padding-top: 0; } }
+
+.dp-huawei-status { display: none; }
+[data-family=huawei] .dp-huawei-status {
+  position: absolute; z-index: 1; inset: 0 0 auto; height: var(--dp-top);
+  display: flex; align-items: center; justify-content: space-between;
+  padding-inline: 24px 104px; pointer-events: none;
+  box-sizing: border-box; color: #17191d; font: 600 15px/1 system-ui,sans-serif;
+}
+.dp-huawei-levels { display: flex; align-items: center; gap: 4px; }
+.dp-huawei-levels img { display: block; width: 17px; height: 17px; }

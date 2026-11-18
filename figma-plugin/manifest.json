@@ -1,0 +1,10 @@
+{
+  "name": "AdaptFlow 折叠屏适配",
+  "id": "1574925803601278053",
+  "api": "1.0.0",
+  "main": "dist/code.js",
+  "ui": "ui.html",
+  "editorType": ["figma"],
+  "documentAccess": "dynamic-page",
+  "networkAccess": { "allowedDomains": ["none"] }
+}

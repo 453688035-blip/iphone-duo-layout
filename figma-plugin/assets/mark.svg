@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 32 32" fill="none" role="img" aria-label="AdaptFlow 折叠屏适配">
+  <title>AdaptFlow 折叠屏适配</title>
+  <desc>绿色渐变圆角底；深绿描边的半开折叠设备——前叶是一块略向左倾的整屏（底部带 Home 条），右后方另一叶收成一枚窄楔形，与右边缘共用铰链线</desc>
+  <defs>
+    <linearGradient id="tile" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="30.4" y2="32">
+      <stop offset="0" stop-color="#5CD8AC"/><stop offset=".5" stop-color="#6ED274"/><stop offset="1" stop-color="#8FD24A"/>
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" rx="7.6" fill="url(#tile)"/>
+  <g stroke="#1C7A2A" stroke-width="1.45" stroke-linejoin="round" stroke-linecap="round" fill="none">
+    <path d="M24.979 8.861Q25.102 8.119 25.311 8.842L28.814 20.956Q29.064 21.822 28.164 21.863L23.068 22.093Q22.788 22.106 22.833 21.829L24.979 8.861Z" fill="#FFFFFF" fill-opacity=".3"/>
+    <path d="M5.401 8.829Q5.52 8.119 6.241 8.119L24.767 8.119Q25.102 8.119 25.047 8.45L22.614 23.05Q22.475 23.881 21.633 23.881L4.04 23.881Q2.865 23.881 3.06 22.722L5.401 8.829Z" fill="#FFFFFF" fill-opacity=".72"/>
+    <path d="M8.19 22.248L17.846 22.248" stroke-width="0.87"/>
+  </g>
+</svg>

@@ -1,5 +1,7 @@
 # iPhone Duo — Figma Checklist & QA Rubric
 
+> Use this reference to reproduce the original project templates. For production adaptation, see [AdaptFlow rules](adaptflow-rules.md).
+
 Use this when building or reviewing Duo layouts in Figma (or code). Labels: **Template** (measured), **Recommended** (project rule), **Unverified** (needs validation). Run the acceptance checklist before handoff.
 
 ## Build gates (Figma)
@@ -7,7 +9,7 @@ Use this when building or reviewing Duo layouts in Figma (or code). Labels: **Te
 - [ ] Frame matches the selected **Template** canvas: inner landscape 951 × 669 · inner portrait 669 × 951 · outer landscape 678 × 466 · outer portrait 466 × 678.
 - [ ] Bezel/shadow/decorative camera artwork excluded from screen dimensions.
 - [ ] Top toolbar height = **84**; page margin = **20**.
-- [ ] Inner portrait: bottom nav reservation y = 856, height **95**; tab component 409 × 95 @ (130, 856).
+- [ ] Inner portrait template with bottom tabs: reservation y = 856, height **95**, tab component 409 × 95 @ (130, 856). For a generated preset without bottom navigation, check the 24 pt project Home area and the final scroll item.
 - [ ] Landscape/outer: right rail width **84** at the template x (inner-landscape 867 · outer-portrait 382 · outer-landscape 594).
 - [ ] Rail group width **48**, offset **12** from the rail's left edge (not an 18/18 split).
 - [ ] Reserved regions respected: inner-portrait top-right 134 × 84 @ (535,0) · inner-landscape 84 × 119 · outer-portrait 84 × 169 · outer-landscape camera 48 × 42.
@@ -34,6 +36,8 @@ Use this when building or reviewing Duo layouts in Figma (or code). Labels: **Te
 - [ ] Destinations and task actions remain separate.
 - [ ] Camera reservations are respected.
 - [ ] Selected destination and tab order remain consistent across orientations.
+- [ ] Safe regions share the page surface. Where an existing title and the status module fit on one row, measure the complete bounds of both before sharing the space.
+- [ ] Each split window uses its available width. Reserve an outer-side inset only when the actual target window reports one or the preview explicitly simulates one.
 - [ ] Touch targets are at least **44 × 44 pt** and do not overlap.
 - [ ] ≤ 5 destinations and ≤ 4 contextual tools before overflow is reviewed.
 
@@ -43,13 +47,21 @@ Use this when building or reviewing Duo layouts in Figma (or code). Labels: **Te
 - [ ] **Complete target bounds** — not only icon centers — avoid the band.
 - [ ] Folded landscape sheet controls are checked individually (20.5 pt overlap region).
 - [ ] Content is reflowed where necessary (not just a visible guide).
+- [ ] The secondary pane has a task or a navigation purpose. Its surface and height follow its contents.
+- [ ] In tabletop, move relevant task controls to the lower panel when possible and keep upper content independently scrollable. Check the last row against the real dock and Home indicator bounds.
+- [ ] In chat frames, extend the screen surface behind the status region and around a centered composer. Give the scroll viewport and fixed composer separate bounds, and verify that a floating action can move without changing the viewport height.
+- [ ] For a horizontal shortcut strip, keep each item in a single scrolling row. In Present, reach the last action and check that the composer and the final message remain usable.
 
 ### Sheets
+
+Use the [overlay recipe](menu-overlay.md) and [acceptance CSV](../assets/overlay-acceptance.csv) for posture-specific Present checks.
 
 - [ ] Sheet geometry matches the relevant posture frame.
 - [ ] Outer landscape's **bottom-flush** exception is preserved or explicitly revised.
 - [ ] Sheet controls use independent layout reservations (toolbar 76 / rail 76 / margin 16; outer-landscape uses actual 84).
 - [ ] Modal background interaction is blocked appropriately.
+- [ ] Closing from mid-scroll returns to the opener and keeps the same reading position. Selecting an entry scrolls only the intended content.
+- [ ] The first and last menu items and the close control are reachable in short landscape. Check the actual prototype overlay destination.
 - [ ] Long content, keyboard, and dismissal behavior are defined.
 - [ ] Unsaved work survives presentation changes.
 
@@ -58,6 +70,7 @@ Use this when building or reviewing Duo layouts in Figma (or code). Labels: **Te
 - [ ] Dynamic Type and long localized strings are tested.
 - [ ] RTL behavior is tested against physical device reservations.
 - [ ] Light and dark appearances are tested.
+- [ ] The preview picker and its expanded menu have legible default, selected and focus states. Normal-sized labels reach 4.5:1 contrast against their own surfaces.
 - [ ] Accessibility focus and reading order are tested.
 - [ ] Posture changes preserve user state.
 - [ ] Measured template facts and proposed project rules remain clearly distinguished.

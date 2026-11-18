@@ -1,0 +1,10 @@
+{
+  "name": "adaptflow-figma-plugin",
+  "private": true,
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "node --test ./*.test.mjs"
+  },
+  "engines": { "node": ">=18" },
+  "devDependencies": { "esbuild": "0.28.2" }
+}

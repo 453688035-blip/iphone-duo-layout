@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Duo 阅读页预览</title>
+<style>
+:root { --bg:#f6f7fa; --line:#dce0e8; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:#19202b; font:16px/1.6 system-ui; }
+.app-shell { container:page / inline-size; }
+.layout { display:grid; grid-template-columns:minmax(0,1fr); }
+nav { display:none; padding:16px; }
+nav a,.sheet-list a { display:block; padding:10px 14px; min-height:44px; }
+nav a.on,.sheet-list a.is-on { background:#eef1ff; color:#163583; }
+main { min-width:0; padding:0 20px 48px; }
+section { padding:24px 0; border-bottom:1px solid var(--line); }
+.duo-topbar { position:sticky; top:0; z-index:1; min-height:54px; padding:0 16px;
+  display:flex; align-items:center; justify-content:space-between; gap:12px; background:#fff; }
+.dp-screen #tocBtn { display:none; }
+@container page (min-width:760px) {
+  .layout { grid-template-columns:200px minmax(0,1fr); }
+  nav { display:block; }
+  .duo-topbar { display:none; }
+}
+.duo-scrim { position:fixed; inset:0; z-index:60; background:#121a3366; }
+.duo-sheet { position:fixed; inset:auto 8px 8px; z-index:61; max-height:78dvh;
+  display:flex; flex-direction:column; border-radius:16px; background:#fff; }
+.sheet-head { display:flex; align-items:center; justify-content:space-between; padding:8px 16px; border-bottom:1px solid var(--line); }
+.sheet-list { overflow:auto; overscroll-behavior:contain; }
+button { min-height:44px; }
+</style>
+<!-- duo-preview:style:start -->
+<!-- duo-preview:style:end -->
+</head>
+<body>
+<!-- duo-preview:markup:start -->
+<!-- duo-preview:markup:end -->
+<div class="app-shell">
+  <header class="duo-topbar">
+    <strong>Duo 阅读页</strong>
+    <button id="tocBtn" type="button" aria-haspopup="dialog" aria-controls="tocSheet" aria-expanded="false">目录</button>
+  </header>
+  <div class="layout">
+    <nav aria-label="报告目录">
+      <a href="#intro">概览</a><a href="#layout">布局</a><a href="#acceptance">验收</a>
+    </nav>
+    <main>
+      <section id="intro"><h1>折叠屏阅读页</h1><p>切换预览姿态后，继续在同一章节阅读。</p></section>
+      <section id="layout"><h2>可用区</h2><p>宽窗可以同时显示目录和正文，窄窗通过目录按钮访问相同章节。</p></section>
+      <section id="acceptance"><h2>交互验收</h2><p>滚动后打开目录，再用 Escape 或「完成」关闭。目录应返回触发按钮，正文应保留位置。</p>
+        <label>测试草稿 <input type="text" value=""></label>
+      </section>
+    </main>
+  </div>
+</div>
+<div class="duo-scrim" id="tocScrim" hidden></div>
+<div class="duo-sheet" id="tocSheet" role="dialog" aria-modal="true" aria-label="报告目录" hidden>
+  <div class="sheet-head"><strong>报告目录</strong><button class="sheet-close" id="tocClose" type="button">完成</button></div>
+  <div class="sheet-list" id="tocList"></div>
+</div>
+<!-- duo-preview:script:start -->
+<!-- duo-preview:script:end -->
+</body>
+</html>

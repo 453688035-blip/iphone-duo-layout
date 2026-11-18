@@ -1,0 +1,1261 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AdaptFlow 折叠屏适配</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: var(--figma-color-bg, #ffffff);
+    --surface: var(--figma-color-bg-secondary, #f5f5f7);
+    --surface-hover: var(--figma-color-bg-hover, #eeeeef);
+    --line: var(--figma-color-border, #e4e4e7);
+    --line-strong: var(--figma-color-border-strong, #c9c9ce);
+    --text: var(--figma-color-text, #1a1a1e);
+    --muted: var(--figma-color-text-secondary, #63636b);
+    --faint: var(--figma-color-text-tertiary, #9a9aa2);
+    --accent: var(--figma-color-bg-brand, #0d66d0);
+    --accent-hover: var(--figma-color-bg-brand-hover, #0a58b8);
+    --accent-press: var(--figma-color-bg-brand-pressed, #084da8);
+    --on-accent: var(--figma-color-text-onbrand, #ffffff);
+    --accent-soft: var(--figma-color-bg-selected, #e8f1fd);
+    --danger: var(--figma-color-text-danger, #b3261e);
+    /* Figma 的 bg-danger / bg-warning / bg-success 是实心色，叠上 text-* 会撞色，
+       这里统一改用半透明染色：浅色、深色主题下都能压出柔和的底。 */
+    --danger-soft: rgba(242, 72, 34, .12);
+    --warning: var(--figma-color-text-warning, #9a6700);
+    --warning-soft: rgba(214, 145, 0, .14);
+    --success: var(--figma-color-text-success, #1a7f37);
+    --success-soft: rgba(26, 127, 55, .12);
+    --disabled-bg: var(--figma-color-bg-disabled, color-mix(in srgb, currentColor 12%, transparent));
+    --disabled-text: var(--muted);
+    --radius: 8px;
+    --radius-sm: 6px;
+    --shadow-card: 0 1px 2px rgba(20, 20, 30, .04);
+    font-family: Inter, -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+    font-size: 13px;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body {
+    margin: 0;
+    color: var(--text);
+    background: var(--surface);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  main {
+    display: grid;
+    gap: 10px;
+    padding: 12px 12px 16px;
+  }
+  h1, h2, p, ul, legend { margin: 0; padding: 0; }
+  ul { list-style: none; }
+  button { font: inherit; }
+
+  /* ---------- 顶部品牌区 ---------- */
+  .app-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 2px 2px;
+  }
+  .app-mark {
+    flex: none;
+    width: 30px;
+    height: 30px;
+    display: block;
+  }
+  .app-header h1 { font-size: 14px; font-weight: 650; letter-spacing: -.01em; }
+  .app-header .sub { font-size: 11.5px; color: var(--muted); }
+  /* 面板版本号：用来确认 Figma 加载的是不是最新的 ui.html。 */
+  .app-version {
+    display: inline-block;
+    margin-left: 2px;
+    padding: 0 5px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 15px;
+    vertical-align: 1px;
+    color: var(--faint);
+  }
+  .stale-ui {
+    font-size: 11.5px;
+    line-height: 1.5;
+    color: var(--danger);
+    color: color-mix(in srgb, var(--danger) 62%, var(--text));
+    background: var(--danger-soft);
+    border: 1px solid color-mix(in srgb, var(--danger) 24%, transparent);
+    border-radius: var(--radius-sm);
+    padding: 7px 9px;
+  }
+  .stale-ui code {
+    font: inherit;
+    font-weight: 600;
+    word-break: break-all;
+  }
+
+  /* ---------- 卡片 ---------- */
+  .card {
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-card);
+    padding: 12px;
+    display: grid;
+    gap: 10px;
+    min-width: 0;
+  }
+  .card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .card-head h2, .card-head legend, .card > h2 {
+    font-size: 12.5px;
+    font-weight: 650;
+  }
+  .card > h2 { margin-bottom: -2px; }
+  .hint { font-size: 11.5px; color: var(--faint); margin-top: -6px; }
+
+  /* ---------- 源稿条 ---------- */
+  .source-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+  }
+  .source-icon {
+    flex: none;
+    width: 26px;
+    height: 26px;
+    display: grid;
+    place-items: center;
+    border-radius: var(--radius-sm);
+    background: var(--accent-soft);
+    color: var(--accent);
+  }
+  .source-meta { min-width: 0; display: grid; line-height: 1.35; }
+  .source-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--faint);
+    min-width: 0;
+  }
+  #source-size { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  #source-size:not(:empty)::before { content: "·"; margin-right: 6px; }
+  #source {
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .source-card.is-empty #source { color: var(--muted); font-weight: 500; }
+  #retry { flex: none; }
+
+  /* ---------- 品牌和姿态 ---------- */
+  fieldset.card { border: 1px solid var(--line); margin: 0; }
+  fieldset:disabled .card-head legend, fieldset:disabled .mini-actions { opacity: .45; }
+  .poses {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+  .brands { display: flex; gap: 6px; margin-bottom: 8px; }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+  }
+  .brand:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+  .brand input { margin: 0; accent-color: var(--accent); }
+  .pose {
+    position: relative;
+    display: grid;
+    grid-template-columns: 48px minmax(0, 1fr) 14px;
+    align-items: center;
+    gap: 8px;
+    padding: 6px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: var(--bg);
+    cursor: pointer;
+    transition: border-color .12s, background .12s, box-shadow .12s;
+    user-select: none;
+  }
+  .pose:hover { border-color: var(--line-strong); }
+  .pose:has(input:checked) {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+    box-shadow: inset 0 0 0 1px var(--accent);
+  }
+  .pose:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .pose input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .pose-art {
+    width: 48px;
+    height: 32px;
+    color: var(--faint);
+    transition: color .12s;
+  }
+  .pose-art svg { display: block; width: 48px; height: 32px; }
+  .pose:has(input:checked) .pose-art { color: var(--accent); }
+  .pose-text { display: grid; min-width: 0; line-height: 1.25; }
+  .pose-name {
+    font-size: 12.5px;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .pose-size {
+    font-size: 10.5px;
+    color: var(--faint);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .pose-check {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 1px solid var(--line-strong);
+    background: var(--bg);
+    display: grid;
+    place-items: center;
+    transition: background .12s, border-color .12s;
+  }
+  .pose-check svg { width: 8px; height: 8px; opacity: 0; }
+  .pose:has(input:checked) .pose-check { background: var(--accent); border-color: var(--accent); }
+  .pose:has(input:checked) .pose-check svg { opacity: 1; }
+  fieldset:disabled .pose { opacity: .5; cursor: default; }
+  .notice {
+    font-size: 11.5px;
+    color: var(--warning);
+    color: color-mix(in srgb, var(--warning) 68%, var(--text));
+    background: var(--warning-soft);
+    border-radius: var(--radius-sm);
+    padding: 5px 8px;
+  }
+
+  /* ---------- 选项 ---------- */
+  .options-card { gap: 0; padding: 4px 12px; }
+  .switch-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 36px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .switch-row input { margin: 0; accent-color: var(--accent); }
+  details { min-width: 0; }
+  .options-card details + details, .options-card .switch-row + details { border-top: 1px solid var(--line); }
+  .options-card summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 36px;
+    cursor: pointer;
+    font-weight: 550;
+    list-style: none;
+    user-select: none;
+  }
+  .options-card summary::-webkit-details-marker { display: none; }
+  .chev {
+    width: 7px; height: 7px;
+    border-right: 1.6px solid var(--faint);
+    border-bottom: 1.6px solid var(--faint);
+    transform: rotate(45deg);
+    transition: transform .15s;
+  }
+  details[open] > summary .chev { transform: rotate(225deg); }
+  .custom { display: grid; gap: 6px; padding: 2px 0 12px; }
+  .custom label { font-size: 11.5px; color: var(--muted); font-weight: 550; }
+  #result-layer, textarea, #width-mode {
+    width: 100%;
+    min-width: 0;
+    font: inherit;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: var(--bg);
+    color: var(--text);
+  }
+  #result-layer { min-height: 32px; padding: 4px 8px; }
+  #result-layer:hover, textarea:hover { border-color: var(--line-strong); }
+  .field-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    min-height: 36px;
+    border-top: 1px solid var(--line);
+  }
+  .field-row label { font-size: 11.5px; font-weight: 550; color: var(--text); }
+  #width-mode {
+    width: auto;
+    max-width: 132px;
+    min-height: 26px;
+    padding: 2px 6px;
+    font-size: 11.5px;
+    cursor: pointer;
+  }
+  #width-mode:hover:enabled { border-color: var(--line-strong); }
+  .field-row + .field-help { margin: -2px 0 6px; }
+  .field-row + .field-help + details { border-top: 1px solid var(--line); }
+  textarea {
+    min-height: 84px;
+    max-height: 220px;
+    padding: 8px 10px;
+    resize: vertical;
+    font: 11px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  textarea[aria-invalid="true"] { border-color: var(--danger); }
+  .field-help { font-size: 11px; color: var(--faint); }
+
+  /* ---------- 按钮 ---------- */
+  .btn {
+    min-height: 30px;
+    padding: 4px 12px;
+    font-weight: 550;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    background: var(--bg);
+    cursor: pointer;
+    transition: background .12s, border-color .12s;
+  }
+  .btn:hover:enabled { background: var(--surface-hover); border-color: var(--line-strong); }
+  .btn:disabled { color: var(--disabled-text); background: var(--surface); cursor: default; }
+  .text-button {
+    min-height: 22px;
+    padding: 1px 7px;
+    font-size: 11.5px;
+    font-weight: 550;
+    border: 0;
+    border-radius: 5px;
+    color: var(--accent);
+    background: transparent;
+    cursor: pointer;
+  }
+  .text-button:hover:enabled { background: var(--accent-soft); }
+  .text-button:disabled { color: var(--disabled-text); cursor: default; }
+  .mini-actions { display: flex; gap: 2px; align-items: center; }
+
+  /* ---------- 主操作区 ---------- */
+  .action-bar {
+    display: grid;
+    gap: 8px;
+    position: sticky;
+    bottom: 0;
+    padding: 10px 2px 2px;
+    background: linear-gradient(to bottom, transparent, var(--surface) 30%);
+  }
+  #generate {
+    min-height: 38px;
+    font-size: 13px;
+    font-weight: 650;
+    border: 1px solid var(--accent);
+    border-radius: var(--radius-sm);
+    color: var(--on-accent);
+    background: var(--accent);
+    cursor: pointer;
+    transition: background .12s;
+  }
+  #generate:hover:enabled { background: var(--accent-hover); border-color: var(--accent-hover); }
+  #generate:active:enabled { background: var(--accent-press); }
+  #generate:disabled {
+    color: var(--disabled-text);
+    background: var(--disabled-bg);
+    border-color: var(--disabled-bg);
+    cursor: default;
+  }
+  .progress-wrap { display: grid; gap: 5px; }
+  .progress-track {
+    height: 4px;
+    border-radius: 999px;
+    background: var(--line);
+    overflow: hidden;
+  }
+  .progress-fill {
+    width: 0%;
+    height: 100%;
+    border-radius: 999px;
+    background: var(--accent);
+    transition: width .22s ease;
+  }
+  .progress-meta {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 11px;
+    color: var(--muted);
+  }
+  #progress-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #progress-percent {
+    flex: none;
+    font-weight: 650;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+  }
+  #generate-hint { text-align: center; font-size: 11.5px; color: var(--faint); }
+  #generate-hint:empty { display: none; }
+  #error {
+    font-size: 12px;
+    font-weight: 550;
+    color: var(--danger);
+    color: color-mix(in srgb, var(--danger) 66%, var(--text));
+    background: var(--danger-soft);
+    border: 1px solid color-mix(in srgb, var(--danger) 42%, transparent);
+    border-radius: var(--radius-sm);
+    padding: 8px 10px;
+    margin: 0 2px;
+    overflow-wrap: anywhere;
+  }
+
+  /* ---------- 样例 ---------- */
+  .sample-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .sample-actions .btn { padding: 4px 6px; }
+
+  /* ---------- 报告 ---------- */
+  .stats { display: flex; flex-wrap: wrap; gap: 6px; }
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    min-height: 24px;
+    padding: 2px 9px;
+    border-radius: 999px;
+    font-size: 11.5px;
+    font-weight: 600;
+    background: var(--surface);
+    color: var(--muted);
+  }
+  .pill.is-error { background: var(--danger-soft); color: var(--danger); color: color-mix(in srgb, var(--danger) 66%, var(--text)); }
+  .pill.is-warning { background: var(--warning-soft); color: var(--warning); color: color-mix(in srgb, var(--warning) 68%, var(--text)); }
+  .pill.is-success { background: var(--success-soft); color: var(--success); color: color-mix(in srgb, var(--success) 66%, var(--text)); }
+  #report-feedback { font-size: 11.5px; color: var(--muted); min-height: 16px; }
+
+  #targets { display: grid; gap: 6px; }
+  .target {
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: var(--bg);
+    overflow: hidden;
+  }
+  .target[open] { background: var(--bg); }
+  .target summary {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 10px;
+    cursor: pointer;
+    list-style: none;
+    user-select: none;
+    min-width: 0;
+  }
+  .target summary::-webkit-details-marker { display: none; }
+  .target summary:hover { background: var(--surface-hover); }
+  .dot {
+    flex: none;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--success);
+  }
+  .target.is-warning > summary .dot { background: var(--warning); }
+  .target.is-error > summary .dot { background: var(--danger); }
+  .target-name {
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+  }
+  .tag {
+    flex: none;
+    font-size: 10.5px;
+    font-weight: 600;
+    color: var(--accent);
+    background: var(--accent-soft);
+    border-radius: 4px;
+    padding: 1px 6px;
+  }
+  .counts { flex: none; margin-left: auto; font-size: 11px; color: var(--faint); white-space: nowrap; }
+  .target-body { display: grid; gap: 8px; padding: 2px 10px 10px; }
+  .target-meta { font-size: 11px; color: var(--faint); }
+  .issue-list { display: grid; gap: 4px; }
+  .issue-list li {
+    display: grid;
+    gap: 2px;
+    padding: 6px 8px;
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    font-size: 11.5px;
+  }
+  .issue-head { display: flex; align-items: center; gap: 6px; min-width: 0; }
+  .badge {
+    flex: none;
+    font-size: 10px;
+    font-weight: 650;
+    border-radius: 4px;
+    padding: 0 5px;
+    line-height: 16px;
+  }
+  .badge.is-error { color: var(--danger); color: color-mix(in srgb, var(--danger) 66%, var(--text)); background: var(--danger-soft); }
+  .badge.is-warning { color: var(--warning); color: color-mix(in srgb, var(--warning) 68%, var(--text)); background: var(--warning-soft); }
+  .issue-code { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rule-chip {
+    flex: none;
+    margin-left: auto;
+    font-size: 10px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    border-radius: 4px;
+    padding: 0 5px;
+    line-height: 16px;
+    color: var(--muted);
+    border: 1px solid var(--line);
+    background: var(--surface);
+    white-space: nowrap;
+  }
+  .issue-detail { color: var(--muted); overflow-wrap: anywhere; }
+  .region-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .report-locate {
+    min-height: 20px;
+    padding: 0 6px;
+    font-size: 11px;
+    font-weight: 550;
+    border: 1px solid transparent;
+    border-radius: 5px;
+    color: var(--accent);
+    background: var(--accent-soft);
+    cursor: pointer;
+    width: fit-content;
+  }
+  .report-locate:hover:enabled { border-color: var(--accent); }
+  #json-fallback { margin-top: 4px; }
+
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  @media (max-width: 300px) {
+    .poses { grid-template-columns: 1fr; }
+    .sample-actions { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <header class="app-header">
+    <span class="app-mark" aria-hidden="true">
+      <svg width="30" height="30" viewBox="0 0 32 32" fill="none">
+        <defs>
+          <linearGradient id="af-mark-tile" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="30.4" y2="32">
+            <stop offset="0" stop-color="#5CD8AC"/>
+            <stop offset=".5" stop-color="#6ED274"/>
+            <stop offset="1" stop-color="#8FD24A"/>
+          </linearGradient>
+        </defs>
+        <rect width="32" height="32" rx="7.6" fill="url(#af-mark-tile)"/>
+        <g stroke="#1C7A2A" stroke-width="1.45" stroke-linejoin="round" stroke-linecap="round" fill="none">
+          <path d="M24.979 8.861Q25.102 8.119 25.311 8.842L28.814 20.956Q29.064 21.822 28.164 21.863L23.068 22.093Q22.788 22.106 22.833 21.829L24.979 8.861Z" fill="#FFFFFF" fill-opacity=".3"/>
+          <path d="M5.401 8.829Q5.52 8.119 6.241 8.119L24.767 8.119Q25.102 8.119 25.047 8.45L22.614 23.05Q22.475 23.881 21.633 23.881L4.04 23.881Q2.865 23.881 3.06 22.722L5.401 8.829Z" fill="#FFFFFF" fill-opacity=".72"/>
+          <path d="M8.19 22.248L17.846 22.248" stroke-width="0.87"/>
+        </g>
+      </svg>
+    </span>
+    <div>
+      <h1>AdaptFlow 折叠屏适配 <span class="app-version" id="ui-version">v0.5</span></h1>
+      <p class="sub">从手机稿生成苹果与华为设备的可编辑适配稿</p>
+    </div>
+  </header>
+
+  <p id="stale-ui" class="stale-ui" role="alert" hidden></p>
+
+  <section class="card source-card is-empty" aria-label="当前源稿">
+    <span class="source-icon" aria-hidden="true">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <path d="M1.5 4.5v-2a1 1 0 0 1 1-1h2M9.5 1.5h2a1 1 0 0 1 1 1v2M12.5 9.5v2a1 1 0 0 1-1 1h-2M4.5 12.5h-2a1 1 0 0 1-1-1v-2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+        <rect x="4.5" y="4.5" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.2"/>
+      </svg>
+    </span>
+    <div class="source-meta">
+      <span class="source-label"><span id="source-kind">源 Frame</span><span id="source-size"></span></span>
+      <span id="source" role="status">正在连接 Figma…</span>
+    </div>
+    <button id="retry" class="btn" type="button" hidden>重试</button>
+  </section>
+
+  <form id="generator">
+    <fieldset id="preset-fieldset" class="card">
+      <div class="card-head">
+        <legend>目标姿态</legend>
+        <div class="mini-actions">
+          <button type="button" id="preset-all" class="text-button">全选</button>
+          <button type="button" id="preset-none" class="text-button">清空</button>
+        </div>
+      </div>
+      <div class="brands" id="preset-brands" role="radiogroup" aria-label="设备品牌">
+        <label class="brand"><input type="radio" name="brand" value="apple" checked>苹果</label>
+        <label class="brand"><input type="radio" name="brand" value="huawei">华为</label>
+      </div>
+      <div id="presets">
+        <div class="poses" data-brand="apple"></div>
+        <div class="poses" data-brand="huawei" hidden></div>
+      </div>
+      <p id="huawei-preset-help" class="field-help" hidden>尺寸取自 HTML 模拟窗口。实测交付可使用下方「自定义窗口」。</p>
+      <p id="custom-indicator" class="notice" hidden>已改用自定义窗口，姿态预设暂不生效。</p>
+    </fieldset>
+
+    <div class="card options-card">
+      <label class="switch-row"><input id="rtl" type="checkbox"><span>从右到左排版（RTL）</span></label>
+      <label id="apple-chrome-option" class="switch-row"><input id="native-chrome" type="checkbox" checked><span>填充 Apple 系统组件（状态栏 / Home 指示条）</span></label>
+      <p id="chrome-status" class="field-help">正在检查 Apple 官方组件库…</p>
+      <div class="field-row">
+        <label for="width-mode">宽窗内容</label>
+        <select id="width-mode" aria-describedby="width-mode-help">
+          <option value="fill">撑满可用区</option>
+          <option value="reading">阅读宽度居中</option>
+        </select>
+      </div>
+      <p id="width-mode-help" class="field-help">撑满：整宽行与多列内容跟随窗口变宽；阅读宽度：按 580 pt 居中，两侧留白。</p>
+      <details id="result-details" hidden>
+        <summary>指定对话结果卡<span class="chev" aria-hidden="true"></span></summary>
+        <div class="custom">
+          <label for="result-layer">结果图层</label>
+          <select id="result-layer" aria-describedby="result-help">
+            <option value="">自动识别</option>
+          </select>
+          <p id="result-help" class="field-help">指定后，可在足够宽的内屏将结果和对话分栏。</p>
+        </div>
+      </details>
+      <details id="custom-details">
+        <summary>自定义窗口<span class="chev" aria-hidden="true"></span></summary>
+        <div class="custom">
+          <label for="custom-target">窗口 JSON</label>
+          <textarea id="custom-target" spellcheck="false" aria-describedby="custom-help"></textarea>
+          <p id="custom-help" class="field-help">填写完整的 target 对象。HarmonyOS 使用 device: "harmonyos"，窗口、安全区和折痕以实测 vp 填写。</p>
+        </div>
+      </details>
+    </div>
+
+    <p id="error" role="alert" hidden></p>
+
+    <div class="action-bar">
+      <button id="generate" type="submit" disabled>生成适配稿</button>
+      <div id="progress-wrap" class="progress-wrap" hidden>
+        <div id="progress-track" class="progress-track" role="progressbar"
+             aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="生成进度">
+          <div id="progress-fill" class="progress-fill"></div>
+        </div>
+        <div class="progress-meta">
+          <span id="progress-label"></span>
+          <span id="progress-percent">0%</span>
+        </div>
+      </div>
+      <p id="generate-hint"></p>
+    </div>
+  </form>
+
+  <section class="card" aria-labelledby="sample-heading">
+    <div class="card-head"><h2 id="sample-heading">创建样例 Frame</h2></div>
+    <p class="hint">没有源稿时，可先生成一个样例体验完整流程。</p>
+    <div class="sample-actions">
+      <button type="button" class="btn" data-sample="list-detail">列表与详情</button>
+      <button type="button" class="btn" data-sample="form">组件表单</button>
+      <button type="button" class="btn" data-sample="conversation">对话与结果</button>
+    </div>
+  </section>
+
+  <section id="report" class="card" aria-labelledby="report-heading" hidden>
+    <div class="card-head">
+      <h2 id="report-heading">适配报告</h2>
+      <div class="mini-actions">
+        <button id="copy" class="text-button" type="button">复制 JSON</button>
+        <button id="download" class="text-button" type="button">下载</button>
+      </div>
+    </div>
+    <div id="report-overview" class="stats" role="status"></div>
+    <span id="report-feedback" role="status"></span>
+    <textarea id="json-fallback" aria-label="报告 JSON" readonly hidden></textarea>
+    <div id="targets"></div>
+  </section>
+</main>
+<script>
+  const byId = id => document.getElementById(id);
+  // Must match PLUGIN_VERSION in main.mjs. Figma can keep an older ui.html in
+  // memory after the files change, so the two sides compare versions on start
+  // and the panel says so instead of silently rendering last build's layout.
+  const UI_VERSION = '0.6.2';
+  const form = byId('generator');
+  const presets = byId('presets');
+  const brands = byId('preset-brands');
+  const customTarget = byId('custom-target');
+  const sampleButtons = [...document.querySelectorAll('[data-sample]')];
+  const presetQuickButtons = [byId('preset-all'), byId('preset-none')];
+  // All poses start selected so a first run never needs a manual pick; the
+  // plugin remembers the last set in clientStorage and re-sends it on ready.
+  const defaultPresets = new Set([
+    'duo-outer-portrait', 'duo-outer-landscape', 'duo-inner-portrait', 'duo-inner-landscape',
+    'duo-book', 'duo-tabletop', 'duo-split-left', 'duo-split-right',
+  ]);
+  // Device silhouettes follow Apple's HIG "Designing for iPhone Duo" pose icons.
+  // Each is drawn at the ratio of the frame it makes — outer 466 × 678, inner
+  // 951 × 669, split pane 466 × 669 — so a thumbnail never contradicts the
+  // geometry the panel is about to generate.
+  const poseArt = {
+    'duo-outer-portrait':
+      '<rect x="17.1" y="6" width="13.8" height="20" rx="2.7"/>' +
+      '<circle cx="28" cy="9.6" r=".68" fill="currentColor" stroke="none"/>' +
+      '<path d="M21.2 23.6h5.6"/>',
+    'duo-outer-landscape':
+      '<rect x="14" y="9.1" width="20" height="13.8" rx="2.7"/>' +
+      '<circle cx="30.7" cy="16" r=".68" fill="currentColor" stroke="none"/>' +
+      '<path d="M21.2 20.5h5.6"/>',
+    'duo-inner-landscape':
+      '<rect x="10" y="6.15" width="28" height="19.7" rx="3.2"/>' +
+      '<path d="M18.8 23.9h10.4"/>',
+    'duo-inner-portrait':
+      '<rect x="14.15" y="2" width="19.7" height="28" rx="3.5"/>' +
+      '<path d="M20.5 27.05h7"/>',
+    'duo-book':
+      '<path d="M10 8.85Q10 6.15 12.7 6.15L24 7.95 35.3 6.15Q38 6.15 38 8.85V23.15' +
+      'Q38 25.85 35.3 25.85L24 24.05 12.7 25.85Q10 25.85 10 23.15Z"/>' +
+      '<path d="M20.4 20.4 24 21.7 27.6 20.4"/>',
+    'duo-tabletop':
+      '<path d="M17.1 2H30.9Q33.85 2 33.85 4.9V15.9L34.7 23.6Q35.2 26.25 32.5 26.25' +
+      'H15.5Q12.8 26.25 13.3 23.6L14.15 15.9V4.9Q14.15 2 17.1 2Z"/>' +
+      '<path d="M20.4 24h7.2"/>',
+    'duo-split-left':
+      '<path d="M24 6.15H34.7Q38 6.15 38 9.45V22.55Q38 25.85 34.7 25.85H24Z"' +
+      ' fill="currentColor" fill-opacity=".12" stroke="none"/>' +
+      '<path d="M10 9.45Q10 6.15 13.3 6.15H24V25.85H13.3Q10 25.85 10 22.55Z"' +
+      ' fill="currentColor" fill-opacity=".18"/>',
+    'duo-split-right':
+      '<path d="M24 6.15H13.3Q10 6.15 10 9.45V22.55Q10 25.85 13.3 25.85H24Z"' +
+      ' fill="currentColor" fill-opacity=".12" stroke="none"/>' +
+      '<path d="M38 9.45Q38 6.15 34.7 6.15H24V25.85H34.7Q38 25.85 38 22.55Z"' +
+      ' fill="currentColor" fill-opacity=".18"/>',
+  };
+  function poseArtSvg(id, brand, display) {
+    let art = poseArt[id];
+    if (brand === 'huawei') {
+      if (id === 'huawei-mate-xt-open') {
+        art = '<rect x="10" y="6" width="28" height="20" rx="2"/><path d="M19.3 6v20m9.4-20v20"/>';
+      } else if (display === 'inner') {
+        art = '<rect x="12" y="4" width="24" height="24" rx="2"/><path d="M24 4v24"/>';
+      } else if (id === 'huawei-pura-x-closed') {
+        art = '<rect x="14" y="6" width="20" height="20" rx="3"/>';
+      } else {
+        art = '<rect x="17" y="4" width="14" height="24" rx="2"/>';
+      }
+    }
+    // 1.07 keeps the largest silhouette (inner portrait, 28 units) filling the
+    // 32-unit art box while leaving room for the 1.55 stroke.
+    return '<svg viewBox="0 0 48 32" width="48" height="32" fill="none" stroke="currentColor"' +
+      ' stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      '<g transform="translate(24 16) scale(1.07) translate(-24 -16)">' +
+      (art ?? '<rect x="10" y="6" width="28" height="20" rx="3.2"/>') + '</g></svg>';
+  }
+  const strategyLabels = new Map([
+    ['single', '单栏'], ['list-detail', '列表与详情'], ['tabletop', '桌面姿态'],
+    ['grid', '网格'], ['continuous', '连续滚动'], ['unavailable', '无法布局'],
+    ['dashboard-stack', '报表单栏'], ['dashboard-columns', '报表双栏'],
+    ['chat-flow', '对话单栏'], ['chat-result-columns', '对话与结果双栏'],
+    ['empty-state', '空状态'],
+    ['structure-review', '需确认页面结构'],
+  ]);
+  const geometryLabels = new Map([
+    ['project-template', '项目模板'], ['project-scenario', '测试场景'],
+    ['simulator', '模拟器'], ['device', '真机'], ['unknown', '来源未知'],
+  ]);
+  let selection = null;
+  let sourceId = null;
+  let busy = false;
+  let ready = false;
+  let startupTimer;
+  let attempts = 0;
+  let currentOperation = null;
+  let currentReport = null;
+
+  function send(message) {
+    parent.postMessage({ pluginMessage: message }, '*');
+  }
+
+  function connect() {
+    if (ready) return;
+    if (attempts++ >= 5) {
+      byId('source').textContent = '未收到插件响应';
+      byId('retry').hidden = false;
+      showError('请重试连接。如果仍然无响应，关闭面板后重新运行插件。');
+      return;
+    }
+    send({ type: 'ready' });
+    startupTimer = setTimeout(connect, 1000);
+  }
+
+  function create(tag, text, className) {
+    const element = document.createElement(tag);
+    if (text) element.textContent = text;
+    if (className) element.className = className;
+    return element;
+  }
+
+  function activePresetGroup() {
+    const brand = brands.querySelector('input:checked').value;
+    return presets.querySelector('[data-brand="' + brand + '"]');
+  }
+
+  function selectedPresets() {
+    return [...activePresetGroup().querySelectorAll('input:checked')].map(input => input.value);
+  }
+
+  function showError(message = '') {
+    const error = byId('error');
+    error.textContent = message;
+    error.hidden = !message;
+  }
+
+  // Figma keeps a plugin's files in memory until the plugin is closed, so the
+  // panel can run last build's HTML against this build's code. Compare the two
+  // versions and say it out loud instead of letting a fix silently not appear.
+  function reportVersion(version) {
+    byId('ui-version').textContent = 'v' + UI_VERSION;
+    const banner = byId('stale-ui');
+    if (!version || version === UI_VERSION) {
+      banner.hidden = true;
+      return;
+    }
+    banner.replaceChildren(
+      create('strong', '界面文件还是旧版（面板 v' + UI_VERSION + '，代码 v' + version + '），生成的界面与本版不一致。'),
+      create('span', ' 请关闭插件面板后退出 Figma，再重新导入 figma-plugin/manifest.json 打开。'),
+    );
+    banner.hidden = false;
+  }
+
+  function updateControls() {
+    const custom = Boolean(customTarget.value.trim());
+    const group = activePresetGroup();
+    const huawei = group.dataset.brand === 'huawei';
+    for (const item of presets.children) item.hidden = item !== group;
+    byId('huawei-preset-help').hidden = !huawei || custom;
+    byId('apple-chrome-option').hidden = huawei && !custom;
+    byId('chrome-status').hidden = huawei && !custom;
+    byId('preset-fieldset').disabled = !ready || busy || custom;
+    byId('custom-indicator').hidden = !custom;
+    byId('rtl').disabled = busy;
+    byId('width-mode').disabled = busy;
+    customTarget.disabled = busy;
+    byId('result-layer').disabled = busy;
+    for (const button of presetQuickButtons) button.disabled = !ready || busy || custom;
+    const count = custom ? 1 : selectedPresets().length;
+    byId('generate').textContent = count > 1 ? '生成适配稿 · ' + count + ' 个姿态' : '生成适配稿';
+    byId('generate').disabled = !ready || busy || !selection || !(custom || selectedPresets().length);
+    byId('generate-hint').textContent = busy ? '' : !ready ? '正在连接 Figma…'
+      : !selection ? '先在画布上选择一个顶层 Frame（区块内的 Frame 也可以），再生成适配稿。'
+      : !(custom || selectedPresets().length) ? '至少选择一个目标姿态，或填写自定义窗口。' : '';
+    for (const button of sampleButtons) button.disabled = !ready || busy;
+    form.setAttribute('aria-busy', String(busy));
+  }
+
+  let progressTimer;
+  function setProgress(percent, label) {
+    clearTimeout(progressTimer);
+    const value = Math.max(0, Math.min(100, Math.round(percent || 0)));
+    byId('progress-wrap').hidden = false;
+    byId('progress-fill').style.width = value + '%';
+    byId('progress-percent').textContent = value + '%';
+    byId('progress-label').textContent = label || '准备中…';
+    byId('progress-track').setAttribute('aria-valuenow', String(value));
+  }
+  function clearProgress(delay = 0) {
+    clearTimeout(progressTimer);
+    progressTimer = setTimeout(() => { byId('progress-wrap').hidden = true; }, delay);
+  }
+
+  function setSelection(value, meta = {}) {
+    selection = value || null;
+    byId('source').textContent = selection || '请选择一个或多个顶层 Frame';
+    byId('source-size').textContent = selection ? (meta.size || '') : '';
+    byId('source-kind').textContent = !selection ? '源 Frame'
+      : meta.inSection ? '源 Frame · 区块内' : '源 Frame';
+    document.querySelector('.source-card').classList.toggle('is-empty', !selection);
+    updateControls();
+  }
+
+  function setResultLayers(id, choices) {
+    const field = byId('result-layer');
+    const previous = id === sourceId ? field.value : '';
+    sourceId = id;
+    const options = [create('option', '自动识别')];
+    options[0].value = '';
+    for (const { id: layerId, label } of choices) {
+      const option = create('option', label);
+      option.value = layerId;
+      options.push(option);
+    }
+    field.replaceChildren(...options);
+    field.value = choices.some(choice => choice.id === previous) ? previous : '';
+    byId('result-details').hidden = choices.length === 0;
+  }
+
+  function renderPresets(items, selection) {
+    const chosen = new Set(Array.isArray(selection) && selection.length ? selection : defaultPresets);
+    const huaweiChosen = items.some(item => item.brand === 'huawei' && chosen.has(item.id));
+    if (!huaweiChosen) chosen.add('huawei-mate-x6-open');
+    if (huaweiChosen && !items.some(item => item.brand !== 'huawei' && chosen.has(item.id))) {
+      brands.querySelector('[value="huawei"]').checked = true;
+      for (const id of defaultPresets) chosen.add(id);
+    }
+    for (const { id, label, size, brand, display } of items) {
+      const card = create('label', '', 'pose');
+      const input = document.createElement('input');
+      input.type = 'checkbox';
+      input.value = id;
+      input.checked = chosen.has(id);
+      const art = create('span', '', 'pose-art');
+      art.innerHTML = poseArtSvg(id, brand, display);
+      const text = create('span', '', 'pose-text');
+      text.append(create('span', label, 'pose-name'));
+      text.append(create('span', size ? size + (brand === 'huawei' ? '' : ' pt') : '', 'pose-size'));
+      const check = create('span', '', 'pose-check');
+      check.innerHTML = '<svg viewBox="0 0 8 8" fill="none"><path d="M1 4.3 3 6.2 7 1.9"' +
+        ' stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+      card.append(input, art, text, check);
+      presets.querySelector('[data-brand="' + (brand === 'huawei' ? 'huawei' : 'apple') + '"]').append(card);
+    }
+  }
+
+  byId('preset-all').addEventListener('click', () => {
+    for (const input of activePresetGroup().querySelectorAll('input')) input.checked = true;
+    updateControls();
+  });
+  byId('preset-none').addEventListener('click', () => {
+    for (const input of activePresetGroup().querySelectorAll('input')) input.checked = false;
+    updateControls();
+  });
+
+  function counts(issues) {
+    const errors = issues.filter(issue => issue.severity === 'error').length;
+    return { errors, other: issues.length - errors };
+  }
+
+  function countLabel({ errors, other }) {
+    return errors || other ? errors + ' 项阻断 · ' + other + ' 项提示' : '无检查问题';
+  }
+
+  function pill(text, tone) {
+    return create('span', text, 'pill' + (tone ? ' is-' + tone : ''));
+  }
+
+  function locateButton(label, nodeId, name) {
+    const button = create('button', label, 'report-locate');
+    button.type = 'button';
+    if (name) button.setAttribute('aria-label', label + ' · ' + name);
+    button.addEventListener('click', () => {
+      if (busy) return;
+      byId('report-feedback').textContent = '';
+      send({ type: 'focus-node', nodeId });
+    });
+    return button;
+  }
+
+  const displayName = name => (name || '').replace(/^\[AdaptFlow\]\s*/, '');
+
+  function targetSummary(target) {
+    const summary = create('summary');
+    const targetCounts = counts(target.issues || []);
+    const tone = targetCounts.errors ? 'is-error' : targetCounts.other ? 'is-warning' : '';
+    summary.append(create('span', '', 'dot'));
+    const name = create('span', displayName(target.name), 'target-name');
+    name.title = target.name;
+    summary.append(name);
+    const strategy = typeof target.strategy === 'string' ? target.strategy : target.strategy?.type;
+    const strategyLabel = strategyLabels.get(strategy) || strategy;
+    if (strategyLabel) summary.append(create('span', strategyLabel, 'tag'));
+    summary.append(create('span', countLabel(targetCounts), 'counts'));
+    return { summary, tone };
+  }
+
+  function renderReport(report) {
+    currentReport = report;
+    byId('report').hidden = false;
+    byId('json-fallback').hidden = true;
+    byId('report-feedback').textContent = '';
+    const targets = byId('targets');
+    targets.replaceChildren();
+    const issues = report.targets.flatMap(target => target.issues || []);
+    const failed = report.failedSources ?? [];
+    const total = counts(issues);
+    const overview = byId('report-overview');
+    overview.replaceChildren();
+    overview.append(pill(report.targets.length + ' 个结果'));
+    if (report.sources) overview.append(pill((report.sources.length + failed.length) + ' 个原稿'));
+    if (failed.length) overview.append(pill(failed.length + ' 个原稿生成失败', 'error'));
+    if (total.errors) overview.append(pill(total.errors + ' 项阻断', 'error'));
+    if (total.other) overview.append(pill(total.other + ' 项提示', 'warning'));
+    if (!total.errors && !total.other && !failed.length) overview.append(pill('无检查问题', 'success'));
+    for (const failure of failed) {
+      const item = create('details', '', 'target is-error');
+      item.open = true;
+      const summary = create('summary');
+      summary.append(create('span', '', 'dot'));
+      summary.append(create('span', failure.sourceName + ' · 生成失败', 'target-name'));
+      item.append(summary);
+      const body = create('div', '', 'target-body');
+      body.append(create('p', failure.message, 'issue-detail'));
+      item.append(body);
+      targets.append(item);
+    }
+    for (const target of report.targets) {
+      const targetIssues = target.issues || [];
+      const item = create('details', '', 'target');
+      item.open = targetIssues.some(issue => issue.severity === 'error');
+      const { summary, tone } = targetSummary(target);
+      if (tone) item.classList.add(tone);
+      item.append(summary);
+      const body = create('div', '', 'target-body');
+      const unit = target.device === 'harmonyos' ? (target.preset ? '' : ' vp')
+        : target.device === 'android' ? ' dp' : ' pt';
+      const metadata = [
+        target.label || target.preset,
+        target.window ? target.window.width + ' × ' + target.window.height + unit : null,
+        geometryLabels.get(target.geometrySource),
+        target.id,
+      ].filter(Boolean);
+      body.append(create('p', metadata.join(' · '), 'target-meta'));
+      body.append(locateButton('定位画板', target.id, target.name));
+      if (target.layoutRegions?.length) {
+        const regions = create('ul', '', 'issue-list');
+        for (const region of target.layoutRegions) {
+          const size = [region.width, region.height].map(value => Number(value.toFixed(1))).join(' × ') + ' pt';
+          const behavior = region.fixed ? '固定' : region.scrolls ? '可纵向滚动' : '';
+          const row = create('li');
+          const head = create('div', '', 'issue-head region-row');
+          head.append(create('span', [region.name, size, behavior].filter(Boolean).join(' · '), 'issue-code'));
+          head.append(locateButton('定位区域', region.nodeId, region.name));
+          row.append(head);
+          regions.append(row);
+        }
+        body.append(regions);
+      }
+      if (targetIssues.length) {
+        const list = create('ul', '', 'issue-list');
+        for (const issue of targetIssues) {
+          const isError = issue.severity === 'error';
+          const row = create('li');
+          const head = create('div', '', 'issue-head');
+          head.append(create('span', isError ? '阻断' : '提示', 'badge ' + (isError ? 'is-error' : 'is-warning')));
+          head.append(create('span', issue.code, 'issue-code'));
+          if (issue.rules?.ids?.length) {
+            const ref = create('span', issue.rules.ids.join(' ') +
+              (issue.rules.priority ? ' · ' + issue.rules.priority : ''), 'rule-chip');
+            ref.title = [issue.rules.tests?.length ? '验收表 ' + issue.rules.tests.join('、') : '',
+              issue.rules.note].filter(Boolean).join('\n');
+            head.append(ref);
+          }
+          row.append(head);
+          const node = issue.nodeName || issue.nodeId || issue.sourceNodeId;
+          const detail = typeof issue.detail === 'string' ? issue.detail : '';
+          if (node || detail) row.append(create('span', [node, detail].filter(Boolean).join(' · '), 'issue-detail'));
+          if (issue.nodeId && issue.nodeId !== target.id) {
+            row.append(locateButton('定位图层', issue.nodeId, node));
+          }
+          list.append(row);
+        }
+        body.append(list);
+      }
+      item.append(body);
+      targets.append(item);
+    }
+  }
+
+  function start(type, payload) {
+    showError();
+    currentOperation = type;
+    busy = true;
+    setProgress(0, type === 'sample' ? '正在创建样例 Frame' : '正在读取原稿');
+    updateControls();
+    send({ type, ...payload });
+  }
+
+  form.addEventListener('submit', event => {
+    event.preventDefault();
+    if (byId('generate').disabled) return;
+    let target = null;
+    if (customTarget.value.trim()) {
+      try {
+        target = JSON.parse(customTarget.value);
+        if (!target || typeof target !== 'object' || Array.isArray(target)) {
+          throw new Error('窗口须为 JSON 对象');
+        }
+      } catch {
+        showError('请输入有效的窗口 JSON 对象。');
+        customTarget.setAttribute('aria-invalid', 'true');
+        byId('custom-details').open = true;
+        customTarget.focus();
+        return;
+      }
+    }
+    start('generate', {
+      presets: target ? [] : selectedPresets(),
+      customTarget: target,
+      sourceId,
+      direction: byId('rtl').checked ? 'rtl' : 'ltr',
+      widthMode: byId('width-mode').value === 'reading' ? 'reading' : 'fill',
+      resultLayerId: byId('result-layer').value || null,
+      chrome: byId('native-chrome').checked,
+    });
+  });
+
+  presets.addEventListener('change', updateControls);
+  brands.addEventListener('change', updateControls);
+  customTarget.addEventListener('input', () => {
+    if (customTarget.hasAttribute('aria-invalid')) showError();
+    customTarget.removeAttribute('aria-invalid');
+    updateControls();
+  });
+  for (const button of sampleButtons) {
+    button.addEventListener('click', () => start('sample', { kind: button.dataset.sample }));
+  }
+
+  function reportJSON() {
+    return JSON.stringify(currentReport, null, 2);
+  }
+
+  byId('copy').addEventListener('click', async () => {
+    if (!currentReport) return;
+    try {
+      await navigator.clipboard.writeText(reportJSON());
+      byId('report-feedback').textContent = '已复制';
+    } catch {
+      const field = byId('json-fallback');
+      field.value = reportJSON();
+      field.hidden = false;
+      field.focus();
+      field.select();
+      byId('report-feedback').textContent = '已选中 JSON，可手动复制。';
+    }
+  });
+
+  byId('download').addEventListener('click', () => {
+    if (!currentReport) return;
+    const url = URL.createObjectURL(new Blob([reportJSON()], { type: 'application/json' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'adaptflow-report.json';
+    document.body.append(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  });
+
+  function setChromeStatus(chrome) {
+    const field = byId('chrome-status');
+    if (!chrome || typeof chrome !== 'object') {
+      field.textContent = '未检查官方组件库。';
+      return;
+    }
+    if (!chrome.available) {
+      field.textContent = '未检测到 Apple 官方组件库：系统区将留白或绘制占位图形。' +
+        '在 Figma Community 启用「iOS and iPadOS 27」后可使用官方组件。';
+      return;
+    }
+    const slots = chrome.slots ?? {};
+    const names = [['statusBar', '顶部状态栏'], ['sideStatusBar', 'Duo 侧边状态栏'], ['homeIndicator', 'Home 指示条']]
+      .map(([slot, label]) => slots[slot] ? label + ' · ' + slots[slot] : null)
+      .filter(Boolean);
+    field.textContent = names.length
+      ? '已匹配官方组件：' + names.join('；')
+      : '已检测到 Apple 组件库，但未匹配到状态栏 / Home 指示条组件。';
+  }
+
+  window.addEventListener('message', event => {
+    const message = event.data?.pluginMessage;
+    switch (message?.type) {
+      case 'init':
+        if (ready || !Array.isArray(message.presets) ||
+            !message.presets.every(item => typeof item?.id === 'string' && typeof item?.label === 'string')) break;
+        ready = true;
+        clearTimeout(startupTimer);
+        byId('retry').hidden = true;
+        showError();
+        reportVersion(message.version);
+        renderPresets(message.presets, message.defaultSelection);
+        setChromeStatus(message.chrome);
+        setSelection(message.selection);
+        break;
+      case 'selection':
+        if (ready) {
+          setSelection(message.selection, { size: message.sourceSize, inSection: message.inSection });
+          setResultLayers(message.sourceId, Array.isArray(message.resultLayers) ? message.resultLayers : []);
+          if (message.error) showError('无法读取当前选择：' + message.error);
+        }
+        break;
+      case 'progress':
+        if (busy) setProgress(message.percent, message.label);
+        break;
+      case 'busy':
+        busy = message.busy;
+        if (busy) {
+          if (byId('progress-wrap').hidden) setProgress(0, '准备中…');
+        } else {
+          currentOperation = null;
+          clearProgress(byId('progress-percent').textContent === '100%' ? 1200 : 400);
+          requestRefresh();
+        }
+        updateControls();
+        break;
+      case 'result':
+        renderReport(message.report);
+        setProgress(100, '适配稿已生成');
+        clearProgress(1200);
+        break;
+      case 'focus-error':
+        byId('report-feedback').textContent = message.message;
+        break;
+      case 'error':
+        showError(message.message);
+        clearProgress(0);
+        break;
+    }
+  });
+
+  // The panel can outlive a canvas navigation, so re-read the selection when it
+  // regains focus instead of trusting the frame it rendered last.
+  let refreshTimer;
+  function requestRefresh() {
+    clearTimeout(refreshTimer);
+    refreshTimer = setTimeout(() => {
+      if (ready && !busy) send({ type: 'refresh-selection' });
+    }, 120);
+  }
+  window.addEventListener('focus', requestRefresh);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) requestRefresh(); });
+
+  byId('retry').addEventListener('click', () => {
+    attempts = 0;
+    byId('retry').hidden = true;
+    byId('source').textContent = '正在连接 Figma…';
+    showError();
+    connect();
+  });
+  updateControls();
+  connect();
+</script>
+</body>
+</html>

@@ -1,54 +1,72 @@
-# iphone-duo-layout (Agent Skill)
+# AdaptFlow 折叠屏适配
 
-An Agent Skill that transforms single-screen iOS/Figma UI into **iPhone Duo** dual-screen and folded-posture layouts. It encodes measured template geometry, a navigation placement matrix, rail anatomy, fold-avoidance rules, sheet frames, posture recipes, and an acceptance checklist.
+<img src="../figma-plugin/assets/mark.svg" width="72" height="72" alt="AdaptFlow 图标">
 
-> **Product status:** iPhone Duo is a concept design project. Its screen dimensions, trailing control rail, and fold-related rules are project conventions — **not** official Apple foldable-iPhone specifications. Apple HIG informs general platform behavior; Duo-specific geometry is project-defined.
+支持 iPhone Duo 姿态、华为设备预览，以及 HarmonyOS 和 Android 实测窗口。此目录提供 Agent Skill、可执行布局规则、几何校验和 Figma Desktop 开发插件。插件从一个或多个顶层原稿 Frame 生成可编辑的姿态稿，回读生成结果并输出 JSON 报告。
 
-## Specification labels
+## Figma 插件
 
-| Label | Meaning |
-|---|---|
-| **Template** | Measured from the supplied design templates. Authoritative for geometry. |
-| **Recommended** | A proposed project rule extending the templates. |
-| **Unverified** | Requires additional design or runtime validation. |
+面板效果见 [面板预览](./figma-plugin/preview/panel-light.png)。在 `../figma-plugin` 目录执行 `npm ci` 和 `npm run build`。在 Figma Desktop 的 Design 文件中，从 **Plugins → Development → Import plugin from manifest…** 导入 [manifest.json](./figma-plugin/manifest.json)。运行 **AdaptFlow 折叠屏适配**，在当前页选中一个或多个原稿 Frame（放在 Section 里也可以），用带姿态缩略图的卡片勾选目标后生成。先在「目标姿态」切换「苹果／华为」。华为预设用于预览，实测交付可在「自定义窗口」填写 HarmonyOS 窗口 JSON。生成时显示百分比进度与当前目标，缩放画布不会中断。多选时每个原稿使用同一组姿态，结果按原稿排成行。指定对话结果卡时单独选中该原稿。 [Figma 插件开发指南](https://developers.figma.com/docs/plugins/plugin-quickstart-guide/)
 
-**MUST / SHOULD / MAY** are project requirements, not Apple platform requirements. Measured template values take precedence over earlier concept dimensions.
+面板顶部的图标是矢量线稿：绿色渐变圆角底 + 深绿描边的半开折叠设备。前叶是一块略向左倾的整屏（上下边水平、两侧同时左倾约 9.5°，底部带一条 Home 条），右后方另一叶收成一枚窄楔形，与前叶右边缘共用同一条铰链线，靠顶端收成尖角、底边比前叶底边略高，填充用低透明度白让它退到后面。几何按参考图逐像素取中心线（前叶 138×111、Home 条约占屏宽一半），再等比缩放到 32 单位画布：缩放 0.142、描边 1.45、Home 条 0.87。独立文件见 [mark.svg](./figma-plugin/assets/mark.svg)，面板里内联同一份路径（插件 `networkAccess` 为 none，不能外链），改色时保持两边一致：底 `#5CD8AC → #8FD24A`，描边 `#1C7A2A`，前叶 `#FFFFFF/.72`、折叶 `#FFFFFF/.30`。
 
-## Install
+姿态卡片里的缩略图（[总览](./figma-plugin/preview/pose-icons.png)）按 Apple HIG「Designing for iPhone Duo」的六种姿态图形重绘为矢量，并按各自预设的真实比例绘制：外屏稿 466 × 678、内屏稿 951 × 669、分屏窗 466 × 669，所以外屏缩略图明显小于内屏缩略图，横向稿和竖向稿的宽高比也各自对应生成稿。分屏左窗 / 右窗画成半个屏幕，靠铰链的一侧直角、另一侧圆角，并用浅色块标出另一半，与生成稿的窗口轮廓一致。四个整屏姿态的 Home 条统一画在屏幕底边居中（距底 1–4 单位、水平居中误差 ≤1 单位），外屏横向的相机点落在右侧中线而不是贴着 Home 条；`ui.test.mjs` 会按几何断言这条规则，避免再出现浮在屏幕中间的横线。打开面板时八个姿态全部预选，可直接生成；之后插件通过 `figma.clientStorage` 记住上一次勾选的组合，下次打开自动恢复，按钮上会显示本次要生成几个姿态。
 
-Copy the `iphone-duo-layout/` folder into your agent's skills directory (e.g. `~/.config/agents/skills/` or the IDE's skills folder). The entry point is `SKILL.md`; references are loaded on demand.
+列表详情可生成展开双栏、紧凑列表和紧凑详情，并在带有打开和返回标记时添加原型连线。表单可在窄屏把字段组改为纵排，回读实例与绑定。没有使用 Auto Layout 的通栏页面会按约束重排：整宽的行跟随可用内容区变宽，固定尺寸的图层只移动不拉伸，高于窗口的内容改为纵向滚动；原稿自带顶部栏时复用该顶部栏，不重复预留工具栏高度。导航位置、工具栏压缩和媒体桌面姿态等规则在报告中供设计复核。规则测试在本目录运行 `npm test`。Writer 测试在项目根目录运行 `npm --prefix figma-plugin test`。内屏竖向及桌面预设无底部导航时使用 24 pt 的 Home 指示条占位，有底部导航时保留原模板的 95 pt。
 
-## File map
+生成稿两侧的空白按三种情况处理。窗口比原稿宽时默认为**撑满可用区**：顶栏、输入栏和整宽行跟随窗口变宽，勾选组、卡片网格这类等宽同级图层平分多出来的宽度；面板的「宽窗内容」可切到**阅读宽度居中**，此时按 580 pt 居中并在报告里给出每侧留白（`reading-width-gutter`）。窗口比原稿窄时，等宽同级图层改为单列堆叠（`stacked-single-column`），固定宽度文字自动换行，不再裁掉右列。原稿没有底部导航或侧边导航时不再预留外侧 84 pt 导航区（`navigation-area-unreserved`），内容直接用满窗口；原稿自带导航栏时仍保留该预留。
 
-| File | Purpose |
-|---|---|
-| `SKILL.md` | Entry point: when to use, workflow, dimensions, navigation matrix, rail/tab rules, fold avoidance, sheets, menus, accessibility, output contract, self-check. |
-| `references/dimensions-tokens.md` | Measured screen sizes, structural tokens, per-layout geometry, fold geometry, spacing scale, sheet frames + internal layout, type/materials (Recommended/Unverified), Figma variable collections. |
-| `references/posture-recipes.md` | Per-posture recipes (inner portrait/landscape, outer portrait/landscape) with wireframes, plus sheet, tabletop, and split-view recipes. |
-| `references/figma-checklist.md` | Figma build gates, the §16 acceptance checklist, and state-continuity checks. |
+窗口圆角按目标几何归一，不照抄原稿。生成时取原稿根 Frame 与铺满表面图层中最大的圆角值，整窗目标（外屏、内屏、书本、桌面）四角等圆；分屏左窗 / 右窗只保留物理外侧圆角，靠铰链的一侧切平。生成稿同时开启裁剪，铺满的背景图层不会把圆角盖成直角。原稿本身是直角时不额外补圆角；圆角绑定了变量时保留原值并报 `corner-radius-bound`。
 
-## Postures at a glance
+原稿若是从设备渲染图（机身外壳 + 内嵌屏幕）整理的，窗口取的是**屏幕那一层**的底色与圆角，而不是机身的颜色。生成时插件把机身 / 底板的铺满图层和根 Frame 一起刷成屏幕底色，根 Frame 的圆角也取屏幕圆角：预留的状态栏条带、导航条带与内容同色，不会再出现一圈灰色机身和方角窗口。屏幕本身是直角时退回机身圆角；只有一层屏幕、没有外壳的原稿不受影响，仍是原来的「取最大圆角」。报告的目标节点会记 `surface: { name, radius }`，指向被采用的屏幕图层。
 
-| Layout | Canvas | Top | Destinations | Fold band |
-|---|---|---|---|---|
-| Inner portrait | 669 × 951 | 84 toolbar | Bottom tab bar 409 × 95 | Horizontal y 455.5–495.5 |
-| Inner landscape | 951 × 669 | 84 toolbar | Right rail x = 867, w = 84 | Vertical x 455.5–495.5 |
-| Outer portrait | 466 × 678 | 84 toolbar | Right rail x = 382, w = 84 | — |
-| Outer landscape | 678 × 466 | 84 toolbar | Right rail x = 594, w = 84 | — |
+机身内缩了屏幕（边框、状态栏条带、铰链边占掉一部分机身）时，只按窗口尺寸拉大机身是不够的：屏幕会停在原位，机身多出来的部分就成了一块空灰区，窗口圆角也还是机身的。识别到这种「机身 + 内嵌屏幕」结构后，插件把窗口当成应用本体来处理：屏幕铺满可用内容区（分栏 / 对话 / 报表类按整窗铺），根 Frame 与机身底板刷成屏幕底色、圆角取屏幕圆角，机身画在屏幕外的装饰（Home 指示条、摄像头、扬声器）一并隐藏并报 `device-bezel-hidden`。对照图见 [机身空区修复](./figma-plugin/preview/device-shell-fix.png)。识别条件是机身有不透明底色和圆角、屏幕面积占机身一半以上、其余可见图层都是无子层的小装饰；同色卡片、浮在页面上的面板不会被当成屏幕。
 
-Folded variants retain the inner-display canvas and add an avoidance region (40 pt band, 20 pt each side of the axis) rather than shrinking the screen.
+系统区（顶部状态栏条带、底部 Home 指示条）可自动填充 Apple 官方组件。面板「填充Apple 系统组件」默认开启：插件启动时通过 Team Library API 检测当前文件启用的组件库，按名称匹配「[iOS and iPadOS 27](https://www.figma.com/community/file/1651309003795292092/ios-and-ipados-27)」（Apple 官方库；在 Community 打开会得到一份副本，把它放进团队项目并发布为组件库，再在目标文件的「资源 → 组件库」里启用）中的 Status Bar / Home Indicator，生成时用 `importComponentByKeyAsync` 把官方实例放进预留条带并按窗口宽度拉伸。导航栏和标签栏属于应用内容（带标题、控件），插件不伪造，仍复用原稿已有的那一层。未检测到组件库时降级：Home 指示条绘制占位圆角条，状态栏保留留白，报告里提示 `native-chrome-fallback`（R032 / T032）。组件库里存在但组件集自身带错误时 Figma 会拒绝实例化，插件同样保留条带、在同一条提示里说明「实例化失败」而不是当成未启用组件库。原稿里已有的同类损坏实例也只在读取属性时被跳过，不会中断整批生成。原稿复用自带顶栏时顶部条带不再预留，状态栏也随之跳过；分屏窗没有顶部 / 底部条带，不填充系统组件。Duo 侧轨窗口匹配对应内／外屏的竖向变体。外屏横向预设依布局导引跳过自动填充状态栏。原稿已有状态层时可用 `[af:status]` 标记，避免重复插入。填充的系统图层以 `[af:chrome]` 命名，不参与几何校验。
 
-## Known project decisions & conflicts
+报告中的 `overlay-posture-review` 定位原型浮层触发层。按 [目录与浮层模板](references/menu-overlay.md) 在 Present 检查旧尺寸目标、短横屏关闭和滚动末项。
 
-- **Trailing vertical rail** (landscape + all outer displays) is a Duo project decision, not standard iPhone navigation. A conventional adaptive tab bar/sidebar is a valid alternative but changes the spec.
-- **Inner portrait keeps a horizontal bottom tab bar** — do not force a rail there.
-- **Rail group is 48 pt at a 12 pt offset**, not centered (12 + 48 leaves 24); don't substitute an 18/18 split.
-- **Folded landscape sheet overlaps the band by 20.5 pt** — internal targets must be checked individually; any fix is documented as a revision.
-- **Outer landscape sheet is bottom-flush** (8 + 458 = 466) and uses 84 pt toolbar/rail despite 76 pt guides.
-- **Tabletop and 50/50 Split View are proposed extensions (Unverified)**, not demonstrated by the templates.
+图层标记、支持范围和两种样例的画布验收见 [Figma Agent 工作流程](references/figma-agent-workflow.md)。
 
-> **Implementation boundary:** static template measurements establish design geometry. They do not verify runtime safe areas, fold sensing, modal behavior, accessibility, keyboard avoidance, or OS support for a hypothetical device.
+普通报表也可直接适配。将指标、趋势图、排行、洞察等作为垂直排列、互不重叠的宽模块，可放在原稿根 Frame 或一个铺满原稿的普通 Frame 内。外屏和分屏采用单栏，足够宽的内屏横向和书本姿态可使用双栏。模块超出窗口高度时使用纵向滚动。
 
-## Platform references
+对话页识别到独立结果卡，或带结果标题的卡片列表后，内屏横向和书本姿态在两栏均至少有 320 pt 可用宽度时，可将对话与结果分别放到两栏。识别不准时，展开「指定对话结果卡」并选择图层。输入栏按生成后的宽度测量高度。高度不足时，输入栏随对话滚动到达。可用「对话与结果」样例验证自动识别。三个样例（列表与详情 / 组件表单 / 对话与结果）的文案全部是中文，字体按苹方 → 思源黑体 → 微软雅黑 → 冬青黑体的顺序取本机第一个可用组合，都没有时回退 Inter；样例 Frame 的图层名仍带 `[af:*]` 标记，生成时照常识别。
 
-[Layout](https://developer.apple.com/design/human-interface-guidelines/layout) · [Tab bars](https://developer.apple.com/design/human-interface-guidelines/tab-bars) · [Toolbars](https://developer.apple.com/design/human-interface-guidelines/toolbars) · [Sidebars](https://developer.apple.com/design/human-interface-guidelines/sidebars) · [Sheets](https://developer.apple.com/design/human-interface-guidelines/sheets) · [Accessibility](https://developer.apple.com/design/human-interface-guidelines/accessibility) · [Right to left](https://developer.apple.com/design/human-interface-guidelines/right-to-left).
+在报告里展开目标稿，可定位画板、内容区域及报错图层。对话、报表和空状态还显示生成后的区域尺寸与滚动状态。插件已导入时，重新构建后关闭并重新运行插件即可读取同一路径下的构建文件。
+
+标题行右侧有一个版本号徽章（当前 `v0.6.2`），它由 `ui.html` 的 `UI_VERSION` 提供，与 `main.mjs` 的 `PLUGIN_VERSION` 成对维护，`ui.test.mjs` 会校验两者一致。Figma 有时会在内存里保留上一版界面文件，于是代码已经是新的、面板还是旧的：这时面板顶部会出现一条红色提示，写明「面板 vX／代码 vY」并给出重新导入的步骤，不用再靠肉眼猜是不是加载了旧稿。徽章没有出现、或者界面上还是旧的卡片结构，说明当前跑的不是这一版 `ui.html`——关闭面板没用时退出 Figma 再重新 **Import plugin from manifest…**，指向 [manifest.json](./figma-plugin/manifest.json)。
+
+图标与版本对照见 [面板自检](./figma-plugin/preview/ui-refresh.png)。
+
+插件窗口标题栏上那个深色 `</>` 方块是 **Figma 自己的占位图标**，开发插件改不了，manifest 也没有图标字段；只有发布插件（Publish）时上传的图标才会替换它。要换成 AdaptFlow 的图标，发布时上传 [icon-512.png](./figma-plugin/assets/icon-512.png)（另有 128 尺寸）。面板内部左上角的绿色标志才是本项目的矢量标记，随 `ui.html` 一起更新。
+
+## 命令行规划
+
+需要 Node.js 18+，无需安装依赖。在本目录执行：
+
+```sh
+node scripts/plan.mjs --list
+printf '%s\n' '{"target":"duo-book","page":{"type":"list-detail"}}' | node scripts/plan.mjs -
+node --test scripts/foldable.test.mjs
+```
+
+可以把 JSON 保存成文件，执行 `node scripts/plan.mjs input.json`。退出码 `0` 表示计划生成且没有阻断问题，`1` 表示输入或执行错误，`2` 表示报告含阻断问题。
+
+| 目标预设 | 适配行为 |
+| --- | --- |
+| `duo-outer-portrait`、`duo-outer-landscape` | 单栏、侧边控件，空间不足时建议压缩工具栏或标签栏 |
+| `duo-inner-portrait`、`duo-inner-landscape` | 列表或侧边栏与详情按最小宽度展开，纵向与横向使用对应的控件位置 |
+| `duo-book` | 分区后按每侧宽度决定双栏或单栏，校验控件避让 |
+| `duo-tabletop` | 媒体页可将预览和触控区上下分置 |
+| `duo-split-left`、`duo-split-right` | 每个窗口独立计算内容，导航位于各自物理外侧 |
+| `huawei-*` | 七个华为模拟窗口。窄屏单栏，展开态按可用宽度布局 |
+
+所有命名预设均使用项目模板或测试场景，交付时可传入模拟器或真机的窗口数据。
+
+## 使用入口
+
+- [Figma 适配 Skill](SKILL.md) 可作为单个文件上传。它包含姿态规则、生成步骤和交接验收。
+- [HTML 折叠屏与平板适配 Skill](./html-foldable-tablet/SKILL.md) 可作为单个文件上传。它指导 Agent 修改现有 HTML、样式和交互，并验证响应式布局。
+- [Figma Agent 工作流程](references/figma-agent-workflow.md) 定义页面识别、原生图层写入、失败回退和结果验证。
+- [AdaptFlow 规则](references/adaptflow-rules.md) 提供自定义窗口示例、Apple 来源、其他折叠屏的输入方式和验收矩阵。
+- [原模板规范](references/legacy-template.md) 保留历史画布、组件、浮层与检查表，用于复刻既有设计。

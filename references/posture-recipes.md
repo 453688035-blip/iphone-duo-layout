@@ -1,5 +1,7 @@
 # iPhone Duo — Posture Recipes
 
+> Use this reference to reproduce the original project templates. For production adaptation, see [AdaptFlow rules](adaptflow-rules.md).
+
 Each recipe gives the **Template** geometry, the content region, navigation placement, and fold handling. Labels: **Template** (measured), **Recommended** (project rule), **Unverified** (needs validation). Coordinates are screen-relative from the top-left.
 
 Quick reference:

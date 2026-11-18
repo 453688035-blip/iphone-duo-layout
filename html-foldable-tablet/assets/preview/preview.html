@@ -1,0 +1,49 @@
+<div class="dp-stage" id="dpStage" hidden>
+  <header class="dp-caption" id="dpCaption"></header>
+  <div class="dp-viewport" id="dpViewport">
+    <div class="dp-fit" id="dpFit">
+      <div class="dp-device" id="dpDevice">
+        <div class="dp-window">
+          <div class="dp-screen" id="dpScreen" tabindex="0" role="region" aria-label="设备内页面"></div>
+          <div class="dp-fold" aria-hidden="true"></div>
+          <div class="dp-home" aria-hidden="true"></div>
+          <div class="dp-huawei-status" aria-hidden="true"><span>9:41</span><div class="dp-huawei-levels"><img src="{{huawei-status-signal.svg}}" alt=""><img src="{{huawei-status-wifi.svg}}" alt=""><img src="{{huawei-status-battery.svg}}" alt=""></div></div>
+          <div class="dp-controls">
+            <div class="dp-status dp-status-vertical" aria-hidden="true">
+              <span>9:41</span><img alt="" src="{{duo-levels-vertical.svg}}" width="46" height="46">
+            </div>
+            <div class="dp-status dp-status-horizontal" aria-hidden="true">
+              <span>9:41</span><img alt="" src="{{duo-levels-horizontal.svg}}" width="46" height="46">
+            </div>
+            <div class="dp-status dp-status-iphone" aria-hidden="true">
+              <span>9:41</span><div class="dp-island-space"></div>
+              <div class="dp-phone-levels">
+                <i class="dp-cellular"><b></b><b></b><b></b><b></b></i>
+                <img alt="" src="{{iphone-wifi.svg}}" width="19.333" height="14.333">
+                <img alt="" src="{{iphone-battery.svg}}" width="29.333" height="13.667">
+              </div>
+            </div>
+            <button id="tocBtn2" class="dp-menu" type="button" aria-label="报告目录" aria-expanded="false" aria-haspopup="dialog" aria-controls="tocSheet">
+              <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M3.5 5h13M3.5 10h13M3.5 15h13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            </button>
+          </div>
+          <div class="dp-overlays" id="dpOverlays"></div>
+        </div>
+        <img class="dp-frame" id="dpFrame" alt="" draggable="false">
+      </div>
+    </div>
+  </div>
+</div>
+<div class="dp-bar" id="dpBar" role="group" aria-label="预览姿态切换">
+  <div class="dp-brand-controls" role="group" aria-label="设备品牌">
+    <button type="button" data-dp-pose="web">原始内容</button>
+    <button type="button" data-dp-brand="apple" aria-pressed="true">苹果</button>
+    <button type="button" data-dp-brand="huawei" aria-pressed="false">华为</button>
+  </div>
+  <div class="dp-poses" data-dp-family="apple" role="group" aria-label="苹果设备与姿态">
+    {{apple-buttons}}
+  </div>
+  <div class="dp-poses" data-dp-family="huawei" role="group" aria-label="华为设备与姿态" hidden>
+    {{huawei-buttons}}
+  </div>
+</div>

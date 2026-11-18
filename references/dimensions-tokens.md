@@ -1,6 +1,6 @@
 # iPhone Duo — Dimensions & Tokens
 
-> **Product status:** iPhone Duo is a concept design project. Its screen dimensions, trailing control rail, and fold-related rules are project conventions — not official Apple foldable-iPhone specifications.
+> These measurements describe the original project templates. See [AdaptFlow rules](adaptflow-rules.md) for runtime window geometry and Apple guidance.
 
 ## Specification labels
 
