@@ -73,4 +73,4 @@ node --test scripts/foldable.test.mjs
 
 ## 致谢
 
-感谢 [Keith](https://github.com/keith0520) 对本 Skill 的贡献——从上一版 GitHub 文件到本次升级（Figma 插件、命令行规划器、华为预设与文档体系）主要由他完成。
+感谢 [Keith](https://github.com/keith0520) 对本项目的贡献。
