@@ -70,3 +70,7 @@ node --test scripts/foldable.test.mjs
 - [Figma Agent 工作流程](references/figma-agent-workflow.md) 定义页面识别、原生图层写入、失败回退和结果验证。
 - [AdaptFlow 规则](references/adaptflow-rules.md) 提供自定义窗口示例、Apple 来源、其他折叠屏的输入方式和验收矩阵。
 - [原模板规范](references/legacy-template.md) 保留历史画布、组件、浮层与检查表，用于复刻既有设计。
+
+## 致谢
+
+感谢 [Keith](https://github.com/keith0520) 对本 Skill 的贡献——从上一版 GitHub 文件到本次升级（Figma 插件、命令行规划器、华为预设与文档体系）主要由他完成。
