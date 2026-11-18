@@ -1,12 +1,12 @@
 # AdaptFlow 折叠屏适配
 
-<img src="../figma-plugin/assets/mark.svg" width="72" height="72" alt="AdaptFlow 图标">
+<img src="./figma-plugin/assets/mark.svg" width="72" height="72" alt="AdaptFlow 图标">
 
 支持 iPhone Duo 姿态、华为设备预览，以及 HarmonyOS 和 Android 实测窗口。此目录提供 Agent Skill、可执行布局规则、几何校验和 Figma Desktop 开发插件。插件从一个或多个顶层原稿 Frame 生成可编辑的姿态稿，回读生成结果并输出 JSON 报告。
 
 ## Figma 插件
 
-面板效果见 [面板预览](./figma-plugin/preview/panel-light.png)。在 `../figma-plugin` 目录执行 `npm ci` 和 `npm run build`。在 Figma Desktop 的 Design 文件中，从 **Plugins → Development → Import plugin from manifest…** 导入 [manifest.json](./figma-plugin/manifest.json)。运行 **AdaptFlow 折叠屏适配**，在当前页选中一个或多个原稿 Frame（放在 Section 里也可以），用带姿态缩略图的卡片勾选目标后生成。先在「目标姿态」切换「苹果／华为」。华为预设用于预览，实测交付可在「自定义窗口」填写 HarmonyOS 窗口 JSON。生成时显示百分比进度与当前目标，缩放画布不会中断。多选时每个原稿使用同一组姿态，结果按原稿排成行。指定对话结果卡时单独选中该原稿。 [Figma 插件开发指南](https://developers.figma.com/docs/plugins/plugin-quickstart-guide/)
+面板效果见 [面板预览](./figma-plugin/preview/panel-light.png)。在 `./figma-plugin` 目录执行 `npm ci` 和 `npm run build`。在 Figma Desktop 的 Design 文件中，从 **Plugins → Development → Import plugin from manifest…** 导入 [manifest.json](./figma-plugin/manifest.json)。运行 **AdaptFlow 折叠屏适配**，在当前页选中一个或多个原稿 Frame（放在 Section 里也可以），用带姿态缩略图的卡片勾选目标后生成。先在「目标姿态」切换「苹果／华为」。华为预设用于预览，实测交付可在「自定义窗口」填写 HarmonyOS 窗口 JSON。生成时显示百分比进度与当前目标，缩放画布不会中断。多选时每个原稿使用同一组姿态，结果按原稿排成行。指定对话结果卡时单独选中该原稿。 [Figma 插件开发指南](https://developers.figma.com/docs/plugins/plugin-quickstart-guide/)
 
 面板顶部的图标是矢量线稿：绿色渐变圆角底 + 深绿描边的半开折叠设备。前叶是一块略向左倾的整屏（上下边水平、两侧同时左倾约 9.5°，底部带一条 Home 条），右后方另一叶收成一枚窄楔形，与前叶右边缘共用同一条铰链线，靠顶端收成尖角、底边比前叶底边略高，填充用低透明度白让它退到后面。几何按参考图逐像素取中心线（前叶 138×111、Home 条约占屏宽一半），再等比缩放到 32 单位画布：缩放 0.142、描边 1.45、Home 条 0.87。独立文件见 [mark.svg](./figma-plugin/assets/mark.svg)，面板里内联同一份路径（插件 `networkAccess` 为 none，不能外链），改色时保持两边一致：底 `#5CD8AC → #8FD24A`，描边 `#1C7A2A`，前叶 `#FFFFFF/.72`、折叶 `#FFFFFF/.30`。
 
